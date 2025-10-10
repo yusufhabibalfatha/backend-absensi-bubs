@@ -5,23 +5,24 @@ Plugin URI: https://example.com/my-plugin
 Description: Plugin sederhana buatan saya.
 Version: 1.0
 Author: Nama Kamu
-Author URI: https://example.com
 License: GPL2
 */
-// komen baru
 
-defined('ABSPATH') or die('No script kiddies please!');
 defined('ABSPATH') || exit;
 
-require_once plugin_dir_path(__FILE__) . 'autoload.php';
-require_once plugin_dir_path(__FILE__) . 'init.php';
+require_once plugin_dir_path(__FILE__) . 'model.php';
+require_once plugin_dir_path(__FILE__) . 'controller.php';
 
+add_action('rest_api_init', function () {
+    register_rest_route('headless/v1', '/hello', [
+        'methods' => 'GET',
+        'callback' => ['Simple_Controller', 'handle_request'],
+        'permission_callback' => '__return_true',
+    ]);
 
-
-// Contoh fungsi sederhana
-function my_plugin_hello_world() {
-    echo "<p>Hello from My Plugin!</p>";
-}
-
-// Hook fungsi ke 'wp_footer'
-add_action('wp_footer', 'my_plugin_hello_world');
+    register_rest_route('headless/v1', '/siswa-by-kelas', [
+        'methods' => 'GET',
+        'callback' => ['Simple_Controller', 'get_siswa_by_nama_kelas'],
+        'permission_callback' => '__return_true',
+    ]);
+});
