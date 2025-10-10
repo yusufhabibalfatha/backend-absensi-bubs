@@ -8,6 +8,7 @@ Author: Nama Kamu
 Author URI: https://example.com
 License: GPL2
 */
+// komen baru
 
 defined('ABSPATH') or die('No script kiddies please!');
 defined('ABSPATH') || exit;
