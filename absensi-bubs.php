@@ -10,6 +10,12 @@ License: GPL2
 */
 
 defined('ABSPATH') or die('No script kiddies please!');
+defined('ABSPATH') || exit;
+
+require_once plugin_dir_path(__FILE__) . 'autoload.php';
+require_once plugin_dir_path(__FILE__) . 'init.php';
+
+
 
 // Contoh fungsi sederhana
 function my_plugin_hello_world() {
