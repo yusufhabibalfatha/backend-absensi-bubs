@@ -1,31 +1,110 @@
 <?php
 
-class Simple_Controller {
+class Absensi_Controller {
 
     public static function handle_request($request) {
         return rest_ensure_response([
-            'message' => 'Halo dari Controller!',
+            'message' => 'API Absensi Bubs - Endpoint tersedia',
+            'endpoints' => [
+                '/jadwal-siswa' => 'GET - Mendapatkan jadwal dan data siswa berdasarkan kriteria',
+                '/mata-pelajaran' => 'GET - Mendapatkan mata pelajaran berdasarkan kelas dan hari'
+            ],
             'time' => current_time('mysql'),
         ]);
     }
 
-    public static function get_siswa_by_nama_kelas($request) {
+    public static function get_jadwal_siswa_by_kriteria($request) {
         $nama_kelas = $request->get_param('kelas');
+        $hari = $request->get_param('hari');
+        $mata_pelajaran = $request->get_param('mapel');
 
-        if (!$nama_kelas) {
+        // Validasi parameter wajib
+        $missing_params = [];
+        if (!$nama_kelas) $missing_params[] = 'kelas';
+        if (!$hari) $missing_params[] = 'hari';
+        if (!$mata_pelajaran) $missing_params[] = 'mapel';
+
+        if (!empty($missing_params)) {
             return new WP_Error(
-                'invalid_parameter',
-                'Parameter ?kelas= wajib diisi.',
+                'missing_parameters',
+                'Parameter berikut wajib diisi: ' . implode(', ', $missing_params),
                 ['status' => 400]
             );
         }
 
-        $data = Simple_Model::get_siswa_by_nama_kelas(sanitize_text_field($nama_kelas));
+        // Validasi hari
+        $hari_valid = ['Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu'];
+        if (!in_array($hari, $hari_valid)) {
+            return new WP_Error(
+                'invalid_hari',
+                'Hari harus salah satu dari: ' . implode(', ', $hari_valid),
+                ['status' => 400]
+            );
+        }
+
+        // Sanitize input
+        $nama_kelas_clean = sanitize_text_field($nama_kelas);
+        $hari_clean = sanitize_text_field($hari);
+        $mata_pelajaran_clean = sanitize_text_field($mata_pelajaran);
+
+        $data = Absensi_Model::get_jadwal_siswa_by_kriteria(
+            $nama_kelas_clean, 
+            $hari_clean, 
+            $mata_pelajaran_clean
+        );
 
         return rest_ensure_response([
             'success' => true,
-            'jumlah' => count($data),
-            'siswa' => $data,
+            'jumlah_siswa' => count($data),
+            'kriteria' => [
+                'kelas' => $nama_kelas_clean,
+                'hari' => $hari_clean,
+                'mata_pelajaran' => $mata_pelajaran_clean
+            ],
+            'data' => $data,
+        ]);
+    }
+
+    public static function get_mata_pelajaran_by_kelas_hari($request) {
+        $nama_kelas = $request->get_param('kelas');
+        $hari = $request->get_param('hari');
+
+        // Validasi parameter wajib
+        if (!$nama_kelas || !$hari) {
+            return new WP_Error(
+                'missing_parameters',
+                'Parameter kelas dan hari wajib diisi',
+                ['status' => 400]
+            );
+        }
+
+        // Validasi hari
+        $hari_valid = ['Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu'];
+        if (!in_array($hari, $hari_valid)) {
+            return new WP_Error(
+                'invalid_hari',
+                'Hari harus salah satu dari: ' . implode(', ', $hari_valid),
+                ['status' => 400]
+            );
+        }
+
+        // Sanitize input
+        $nama_kelas_clean = sanitize_text_field($nama_kelas);
+        $hari_clean = sanitize_text_field($hari);
+
+        $data = Absensi_Model::get_mata_pelajaran_by_kelas_hari($nama_kelas_clean, $hari_clean);
+
+        $mata_pelajaran_list = array_map(function($item) {
+            return $item['mata_pelajaran'];
+        }, $data);
+
+        return rest_ensure_response([
+            'success' => true,
+            'kriteria' => [
+                'kelas' => $nama_kelas_clean,
+                'hari' => $hari_clean
+            ],
+            'mata_pelajaran' => $mata_pelajaran_list,
         ]);
     }
 }
