@@ -16,7 +16,7 @@ require_once plugin_dir_path(__FILE__) . 'controller.php';
 
 // API
 // GET /wp-json/absensi-bubs/v1/
-// GET /wp-json/absensi-bubs/v1/jadwal-siswa?kelas=10 IPA 1&hari=Senin&mapel=Matematika
+// GET /wp-json/absensi-bubs/v1/jadwal-siswa?kelas=Kelas 7&hari=Sabtu&mapel=Informatika
 // GET /wp-json/absensi-bubs/v1/mata-pelajaran?kelas=10 IPA 1&hari=Senin
 
 add_action('rest_api_init', function () {
@@ -76,4 +76,19 @@ add_action('rest_api_init', function () {
             ]
         ]
     ]);
+
+    register_rest_route('absensi-bubs/insert', 'absensi-sekolah', [
+        'methods' => 'POST',
+        'callback' => ['Absensi_Controller', 'insert_absensi_sekolah'],
+        'permission_callback' => '__return_true',
+        'args' => []
+    ]);
+});
+
+add_action('send_headers', function() {
+    // Ganti '*' dengan origin spesifik jika perlu keamanan lebih
+    header("Access-Control-Allow-Origin: *");
+    header("Access-Control-Allow-Methods: GET, POST, OPTIONS");
+    header("Access-Control-Allow-Credentials: true");
+    header("Access-Control-Allow-Headers: Authorization, Content-Type");
 });

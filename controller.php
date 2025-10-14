@@ -107,4 +107,31 @@ class Absensi_Controller {
             'mata_pelajaran' => $mata_pelajaran_list,
         ]);
     }
+
+    public static function insert_absensi_sekolah($request)
+    {
+        try {
+            $data = $request->get_json_params();
+
+            if (empty($data)) {
+                throw new Exception('Data tidak boleh kosong.');
+            }
+
+            $result_insert = Absensi_Model::insert_absensi_sekolah($data);
+
+            return new WP_REST_Response([
+                'success' => true,
+                'message' => 'Data generus berhasil ditambahkan.',
+                'result' => $result_insert,
+            ], 201);
+        } catch (Exception $e) {
+            error_log('API Insert absen: ' . $e->getMessage());
+
+            return new WP_REST_Response([
+                'success' => false,
+                'error' => true,
+                'message' => $e->getMessage(),
+            ], 400);
+        }
+    }
 }
