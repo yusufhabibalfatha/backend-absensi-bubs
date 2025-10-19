@@ -53,13 +53,20 @@ class Absensi_Controller {
             $mata_pelajaran_clean
         );
 
+        $guru = Absensi_Model::get_guru_jadwal_siswa_by_kriteria(
+            $nama_kelas_clean, 
+            $hari_clean, 
+            $mata_pelajaran_clean
+        );
+
         return rest_ensure_response([
             'success' => true,
             'jumlah_siswa' => count($data),
             'kriteria' => [
                 'kelas' => $nama_kelas_clean,
                 'hari' => $hari_clean,
-                'mata_pelajaran' => $mata_pelajaran_clean
+                'mata_pelajaran' => $mata_pelajaran_clean,
+                'guru' => $guru[0]['nama']
             ],
             'data' => $data,
         ]);

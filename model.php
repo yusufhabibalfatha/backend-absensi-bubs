@@ -37,6 +37,33 @@ class Absensi_Model {
         return $results;
     }
 
+    public static function get_guru_jadwal_siswa_by_kriteria($nama_kelas, $hari, $mata_pelajaran) {
+        global $wpdb;
+
+        $jadwal_table = 'bubs_jadwal';
+        $kelas_table = 'bubs_kelas';
+        $guru_table = 'bubs_guru';
+
+        $query = $wpdb->prepare("
+            SELECT 
+                g.nama
+            FROM 
+                {$jadwal_table} j
+            INNER JOIN 
+                {$kelas_table} k ON j.id_kelas = k.id
+            INNER JOIN 
+                {$guru_table} g ON g.id = j.id_guru
+            WHERE 
+                k.nama_kelas = %s AND
+                j.hari = %s AND
+                j.mata_pelajaran = %s
+        ", $nama_kelas, $hari, $mata_pelajaran);
+
+        $results = $wpdb->get_results($query, ARRAY_A);
+
+        return $results;
+    }
+
     public static function get_hari_available() {
         return ['Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu'];
     }
