@@ -14,6 +14,7 @@ class Absensi_Model {
                 j.id AS id_jadwal,
                 s.id AS id_siswa,
                 s.nama_lengkap,
+                s.nik,
                 NULL AS tanggal,
                 NULL AS status,
                 NULL AS keterangan,
