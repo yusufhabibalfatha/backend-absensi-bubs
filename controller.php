@@ -141,4 +141,290 @@ class Absensi_Controller {
             ], 400);
         }
     }
+
+    // =============================================
+    // CONTROLLER BARU UNTUK ABSENSI KEGIATAN
+    // =============================================
+
+    /**
+     * Get semua jenis kegiatan
+     */
+    public static function get_jenis_kegiatan($request) {
+        try {
+            $data = Absensi_Model::get_jenis_kegiatan();
+
+            return rest_ensure_response([
+                'success' => true,
+                'data' => $data,
+                'jumlah' => count($data)
+            ]);
+        } catch (Exception $e) {
+            return new WP_Error(
+                'server_error',
+                'Terjadi kesalahan server: ' . $e->getMessage(),
+                ['status' => 500]
+            );
+        }
+    }
+
+    /**
+     * Get kelas boarding
+     */
+    public static function get_kelas_boarding($request) {
+        try {
+            $data = Absensi_Model::get_kelas_boarding();
+
+            return rest_ensure_response([
+                'success' => true,
+                'data' => $data,
+                'jumlah' => count($data)
+            ]);
+        } catch (Exception $e) {
+            return new WP_Error(
+                'server_error',
+                'Terjadi kesalahan server: ' . $e->getMessage(),
+                ['status' => 500]
+            );
+        }
+    }
+
+    /**
+     * Get semua kamar
+     */
+    public static function get_kamar($request) {
+        try {
+            $data = Absensi_Model::get_kamar();
+
+            return rest_ensure_response([
+                'success' => true,
+                'data' => $data,
+                'jumlah' => count($data)
+            ]);
+        } catch (Exception $e) {
+            return new WP_Error(
+                'server_error',
+                'Terjadi kesalahan server: ' . $e->getMessage(),
+                ['status' => 500]
+            );
+        }
+    }
+
+    /**
+     * Get siswa untuk kegiatan
+     */
+    public static function get_siswa_kegiatan($request) {
+        $id_kegiatan = $request->get_param('kegiatan');
+        $id_kelas = $request->get_param('kelas');
+        $id_kamar = $request->get_param('kamar');
+
+        // Validasi parameter
+        if (!$id_kegiatan) {
+            return new WP_Error(
+                'missing_parameters',
+                'Parameter kegiatan wajib diisi',
+                ['status' => 400]
+            );
+        }
+
+        // Sanitize input
+        $id_kegiatan_clean = intval($id_kegiatan);
+        $id_kelas_clean = $id_kelas ? intval($id_kelas) : NULL;
+        $id_kamar_clean = $id_kamar ? intval($id_kamar) : NULL;
+
+        try {
+            // Tentukan jenis query berdasarkan parameter
+            if ($id_kelas_clean !== NULL) {
+                // Kegiatan SEKOLAH (berdasarkan kelas)
+                $data = Absensi_Model::get_siswa_kegiatan_sekolah($id_kelas_clean, $id_kegiatan_clean);
+            } elseif ($id_kamar_clean !== NULL) {
+                // Kegiatan PONDOK (berdasarkan kamar)
+                $data = Absensi_Model::get_siswa_kegiatan_pondok($id_kamar_clean, $id_kegiatan_clean);
+            } else {
+                return new WP_Error(
+                    'missing_parameters',
+                    'Parameter kelas atau kamar wajib diisi',
+                    ['status' => 400]
+                );
+            }
+
+            // Handle error dari model
+            if (is_wp_error($data)) {
+                return $data;
+            }
+
+            return rest_ensure_response([
+                'success' => true,
+                'jumlah_siswa' => count($data),
+                'data' => $data,
+            ]);
+        } catch (Exception $e) {
+            return new WP_Error(
+                'server_error',
+                'Terjadi kesalahan server: ' . $e->getMessage(),
+                ['status' => 500]
+            );
+        }
+    }
+
+    /**
+     * Insert absensi kegiatan
+     */
+    public static function insert_absensi_kegiatan($request) {
+        try {
+            $data = $request->get_json_params();
+
+            if (empty($data)) {
+                throw new Exception('Data tidak boleh kosong.');
+            }
+
+            $result_insert = Absensi_Model::insert_absensi_kegiatan($data);
+
+            if (is_wp_error($result_insert)) {
+                return $result_insert;
+            }
+
+            return new WP_REST_Response([
+                'success' => true,
+                'message' => 'Data absensi kegiatan berhasil disimpan.',
+                'result' => $result_insert,
+            ], 201);
+        } catch (Exception $e) {
+            error_log('API Insert absensi kegiatan: ' . $e->getMessage());
+
+            return new WP_REST_Response([
+                'success' => false,
+                'error' => true,
+                'message' => $e->getMessage(),
+            ], 400);
+        }
+    }
+// Tambahkan di controller.php (setelah fungsi yang sudah ada)
+
+/**
+ * Handle user login
+ */
+public static function login_user($request) {
+    try {
+        $data = $request->get_json_params();
+        
+        $username = sanitize_text_field($data['username'] ?? '');
+        $password = sanitize_text_field($data['password'] ?? '');
+
+        // Validasi input
+        if (empty($username) || empty($password)) {
+            throw new Exception('Username dan password wajib diisi.');
+        }
+
+        $user = Absensi_Model::verify_login($username, $password);
+
+        if (is_wp_error($user)) {
+            return $user;
+        }
+
+        return new WP_REST_Response([
+            'success' => true,
+            'message' => 'Login berhasil',
+            'user' => $user
+        ], 200);
+
+    } catch (Exception $e) {
+        return new WP_REST_Response([
+            'success' => false,
+            'message' => $e->getMessage()
+        ], 400);
+    }
+}
+
+// Tambahkan di controller.php
+
+/**
+ * Get presensi history for siswa
+ */
+public static function get_presensi_siswa($request) {
+    try {
+        $user = self::get_current_user();
+        
+        if (!$user || $user['role'] !== 'SISWA') {
+            throw new Exception('Akses ditolak. Hanya untuk siswa.');
+        }
+        
+        $bulan = $request->get_param('bulan') ?: date('m');
+        $tahun = $request->get_param('tahun') ?: date('Y');
+
+        $data = Absensi_Model::get_presensi_siswa($user['id_siswa'], $bulan, $tahun);
+        
+        return new WP_REST_Response([
+            'success' => true,
+            'data' => $data,
+            'periode' => [
+                'bulan' => intval($bulan),
+                'tahun' => intval($tahun)
+            ]
+        ], 200);
+        
+    } catch (Exception $e) {
+        return new WP_REST_Response([
+            'success' => false,
+            'message' => $e->getMessage()
+        ], 400);
+    }
+}
+
+/**
+ * Get rekap presensi kelas untuk guru
+ */
+public static function get_rekap_presensi_kelas($request) {
+    try {
+        $user = self::get_current_user();
+        
+        if (!$user || $user['role'] !== 'GURU') {
+            throw new Exception('Akses ditolak. Hanya untuk guru.');
+        }
+        
+        $id_kelas = $request->get_param('kelas');
+        $bulan = $request->get_param('bulan') ?: date('m');
+        $tahun = $request->get_param('tahun') ?: date('Y');
+        
+        if (!$id_kelas) {
+            throw new Exception('Parameter kelas wajib diisi.');
+        }
+        
+        $data = Absensi_Model::get_rekap_presensi_kelas($id_kelas, $user['id_guru'], $bulan, $tahun);
+        
+        if (is_wp_error($data)) {
+            return $data;
+        }
+        
+        return new WP_REST_Response([
+            'success' => true,
+            'data' => $data,
+            'periode' => [
+                'bulan' => intval($bulan),
+                'tahun' => intval($tahun)
+            ]
+        ], 200);
+        
+    } catch (Exception $e) {
+        return new WP_REST_Response([
+            'success' => false,
+            'message' => $e->getMessage()
+        ], 400);
+    }
+}
+
+/**
+ * Helper function to get current user from localStorage data
+ * Note: Ini sederhana dulu, nanti bisa enhance dengan proper session/token
+ */
+private static function get_current_user() {
+    // Untuk MVP, kita terima user data via headers
+    // Nanti bisa enhance dengan proper authentication
+    $user_data = isset($_SERVER['HTTP_X_USER_DATA']) ? $_SERVER['HTTP_X_USER_DATA'] : '';
+    
+    if ($user_data) {
+        return json_decode(stripslashes($user_data), true);
+    }
+    
+    return null;
+}
 }
