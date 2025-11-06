@@ -1,6 +1,6 @@
 <?php
 /*
-Plugin Name: Absensi Bubs
+Plugin Name: Absensi Bubs V1
 Plugin URI: https://example.com/absensi-bubs
 Description: Plugin untuk sistem absensi sekolah Bubs.
 Version: 1.1
@@ -170,22 +170,34 @@ add_action('rest_api_init', function () {
         'callback' => ['Absensi_Controller', 'get_rekap_presensi_kelas'],
         'permission_callback' => '__return_true',
     ]);
+
+    // Tambahkan di rest_api_init
+
+// Rekap presensi detail untuk guru
+register_rest_route('absensi-bubs/v1', '/rekap-presensi-kelas-detailed', [
+    'methods' => 'GET',
+    'callback' => ['Absensi_Controller', 'get_rekap_presensi_kelas_detailed'],
+    'permission_callback' => '__return_true',
+]);
+
+// Kelas yang diajar guru
+register_rest_route('absensi-bubs/v1', '/kelas-guru', [
+    'methods' => 'GET',
+    'callback' => ['Absensi_Controller', 'get_kelas_guru'],
+    'permission_callback' => '__return_true',
+]);
+
+// Export to Excel
+register_rest_route('absensi-bubs/v1', '/export-rekap-excel', [
+    'methods' => 'GET',
+    'callback' => ['Absensi_Controller', 'export_rekap_excel'],
+    'permission_callback' => '__return_true',
+]);
 });
 
-add_action('send_headers', function() {
-    // Ganti '*' dengan origin spesifik jika perlu keamanan lebih
-    header("Access-Control-Allow-Origin: *");
-    header("Access-Control-Allow-Methods: GET, POST, OPTIONS");
-    header("Access-Control-Allow-Credentials: true");
+
+add_action('init', function() {
+    header("Access-Control-Allow-Origin: http://localhost:5173");
+    header("Access-Control-Allow-Methods: GET, POST, OPTIONS, PUT, DELETE");
     header("Access-Control-Allow-Headers: Authorization, Content-Type");
 });
-
-add_action('rest_api_init', function() {
-    remove_filter('rest_pre_serve_request', 'rest_send_cors_headers'); // hilangkan bawaan WP
-    add_filter('rest_pre_serve_request', function($value) {
-        header('Access-Control-Allow-Origin: *'); // atau domain tertentu, misalnya https://localhost:5173
-        header('Access-Control-Allow-Methods: GET, POST, PUT, PATCH, DELETE, OPTIONS');
-        header('Access-Control-Allow-Headers: Content-Type, Authorization, X-User-Data');
-        return $value;
-    });
-}, 15);

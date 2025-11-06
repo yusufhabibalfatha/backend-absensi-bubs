@@ -427,4 +427,163 @@ private static function get_current_user() {
     
     return null;
 }
+
+// Tambahkan di controller.php
+
+/**
+ * Get rekap presensi kelas detail untuk guru
+ */
+public static function get_rekap_presensi_kelas_detailed($request) {
+    try {
+        $user = self::get_current_user();
+        
+        if (!$user || $user['role'] !== 'GURU') {
+            throw new Exception('Akses ditolak. Hanya untuk guru.');
+        }
+        
+        $id_kelas = $request->get_param('kelas');
+        $bulan = $request->get_param('bulan') ?: date('m');
+        $tahun = $request->get_param('tahun') ?: date('Y');
+        $mapel = $request->get_param('mapel');
+        
+        if (!$id_kelas) {
+            throw new Exception('Parameter kelas wajib diisi.');
+        }
+        
+        $data = Absensi_Model::get_rekap_presensi_kelas_detailed(
+            $id_kelas, $user['id_guru'], $bulan, $tahun, $mapel
+        );
+        
+        if (is_wp_error($data)) {
+            return $data;
+        }
+        
+        // Get additional info for response
+        $kelas_info = $wpdb->get_row($wpdb->prepare("
+            SELECT nama_kelas FROM bubs_kelas WHERE id = %d
+        ", $id_kelas), ARRAY_A);
+        
+        $mapel_list = Absensi_Model::get_mata_pelajaran_guru($user['id_guru'], $id_kelas);
+        
+        return new WP_REST_Response([
+            'success' => true,
+            'data' => $data,
+            'info' => [
+                'kelas' => $kelas_info['nama_kelas'] ?? '',
+                'bulan' => intval($bulan),
+                'tahun' => intval($tahun),
+                'mapel' => $mapel,
+                'total_siswa' => count($data)
+            ],
+            'filters' => [
+                'mapel_list' => array_column($mapel_list, 'mata_pelajaran')
+            ]
+        ], 200);
+        
+    } catch (Exception $e) {
+        return new WP_REST_Response([
+            'success' => false,
+            'message' => $e->getMessage()
+        ], 400);
+    }
+}
+
+/**
+ * Get kelas yang diajar guru
+ */
+public static function get_kelas_guru($request) {
+    try {
+        $user = self::get_current_user();
+        
+        if (!$user || $user['role'] !== 'GURU') {
+            throw new Exception('Akses ditolak. Hanya untuk guru.');
+        }
+        
+        $data = Absensi_Model::get_kelas_guru($user['id_guru']);
+        
+        return new WP_REST_Response([
+            'success' => true,
+            'data' => $data
+        ], 200);
+        
+    } catch (Exception $e) {
+        return new WP_REST_Response([
+            'success' => false,
+            'message' => $e->getMessage()
+        ], 400);
+    }
+}
+
+/**
+ * Export rekap presensi to Excel
+ */
+public static function export_rekap_excel($request) {
+    try {
+        $user = self::get_current_user();
+        
+        if (!$user || $user['role'] !== 'GURU') {
+            throw new Exception('Akses ditolak. Hanya untuk guru.');
+        }
+        
+        $id_kelas = $request->get_param('kelas');
+        $bulan = $request->get_param('bulan') ?: date('m');
+        $tahun = $request->get_param('tahun') ?: date('Y');
+        $mapel = $request->get_param('mapel');
+        
+        if (!$id_kelas) {
+            throw new Exception('Parameter kelas wajib diisi.');
+        }
+        
+        $data = Absensi_Model::get_rekap_presensi_kelas_detailed(
+            $id_kelas, $user['id_guru'], $bulan, $tahun, $mapel
+        );
+        
+        if (is_wp_error($data)) {
+            return $data;
+        }
+        
+        // Generate Excel file
+        $filename = self::generate_excel_file($data, $bulan, $tahun, $mapel);
+        
+        return new WP_REST_Response([
+            'success' => true,
+            'file_url' => $filename,
+            'message' => 'File Excel berhasil di-generate'
+        ], 200);
+        
+    } catch (Exception $e) {
+        return new WP_REST_Response([
+            'success' => false,
+            'message' => $e->getMessage()
+        ], 400);
+    }
+}
+
+/**
+ * Generate Excel file (simplified version)
+ * Note: Untuk production, bisa pakai library seperti PhpSpreadsheet
+ */
+private static function generate_excel_file($data, $bulan, $tahun, $mapel) {
+    $months = ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'];
+    $month_name = $months[$bulan - 1] ?? 'Unknown';
+    
+    // Create CSV content (simplified - untuk production pakai PhpSpreadsheet)
+    $csv_content = "Rekap Presensi - {$month_name} {$tahun}\n";
+    $csv_content .= "Mata Pelajaran: " . ($mapel ?: 'Semua Mapel') . "\n\n";
+    $csv_content .= "No,NIS,Nama Siswa,Hadir,Izin,Sakit,Alpa,Total,Presentase\n";
+    
+    $counter = 1;
+    foreach ($data as $row) {
+        $csv_content .= "{$counter},{$row['nik']},{$row['nama_lengkap']},{$row['hadir']},{$row['izin']},{$row['sakit']},{$row['alpa']},{$row['total_pertemuan']},{$row['presentase']}%\n";
+        $counter++;
+    }
+    
+    // Save file temporarily
+    $filename = "rekap_presensi_{$bulan}_{$tahun}_" . time() . ".csv";
+    $filepath = WP_CONTENT_DIR . '/uploads/' . $filename;
+    
+    file_put_contents($filepath, $csv_content);
+    
+    return content_url('/uploads/' . $filename);
+}
 }

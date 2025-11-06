@@ -565,4 +565,101 @@ public static function get_rekap_presensi_kelas($id_kelas, $id_guru, $bulan = nu
     return $wpdb->get_results($query, ARRAY_A);
 }
 
+// Tambahkan di model.php
+
+/**
+ * Get rekap presensi kelas untuk guru dengan detail
+ */
+public static function get_rekap_presensi_kelas_detailed($id_kelas, $id_guru, $bulan = null, $tahun = null, $mapel = null) {
+    global $wpdb;
+
+    return $id_kelas;
+    
+    if (!$bulan) $bulan = date('m');
+    if (!$tahun) $tahun = date('Y');
+    
+    // Validasi bahwa guru memang mengajar kelas ini
+    $validasi = $wpdb->get_var($wpdb->prepare("
+        SELECT COUNT(*) FROM bubs_jadwal 
+        WHERE id_kelas = %d AND id_guru = %d
+        AND (%s IS NULL OR mata_pelajaran = %s)
+    ", $id_kelas, $id_guru, $mapel, $mapel));
+
+    if (!$validasi) {
+        return new WP_Error('unauthorized', 'Anda tidak mengajar kelas ini atau mata pelajaran tidak ditemukan.');
+    }
+    
+    $mapel_condition = $mapel ? "AND j.mata_pelajaran = '" . esc_sql($mapel) . "'" : "";
+    
+    $query = $wpdb->prepare("
+        SELECT 
+            s.id as id_siswa,
+            s.nama_lengkap,
+            s.nik,
+            COUNT(CASE WHEN a.status = 'Hadir' THEN 1 END) as hadir,
+            COUNT(CASE WHEN a.status = 'Izin' THEN 1 END) as izin,
+            COUNT(CASE WHEN a.status = 'Sakit' THEN 1 END) as sakit,
+            COUNT(CASE WHEN a.status = 'Alpa' THEN 1 END) as alpa,
+            COUNT(*) as total_pertemuan,
+            j.mata_pelajaran,
+            k.nama_kelas
+        FROM bubs_siswa s
+        LEFT JOIN bubs_absensi_sekolah a ON s.id = a.id_siswa 
+            AND MONTH(a.tanggal) = %d 
+            AND YEAR(a.tanggal) = %d
+        LEFT JOIN bubs_jadwal j ON a.id_jadwal = j.id 
+            AND j.id_guru = %d
+            {$mapel_condition}
+        LEFT JOIN bubs_kelas k ON s.id_kelas = k.id
+        WHERE s.id_kelas = %d
+        GROUP BY s.id, s.nama_lengkap, s.nik, j.mata_pelajaran, k.nama_kelas
+        ORDER BY s.nama_lengkap
+    ", $bulan, $tahun, $id_guru, $id_kelas);
+    
+    $results = $wpdb->get_results($query, ARRAY_A);
+    
+    // Calculate percentages
+    foreach ($results as &$row) {
+        $total = $row['total_pertemuan'] ?: 1; // Avoid division by zero
+        $row['presentase'] = round(($row['hadir'] / $total) * 100, 1);
+    }
+    
+    return $results;
+}
+
+/**
+ * Get mata pelajaran yang diajar guru di kelas tertentu
+ */
+public static function get_mata_pelajaran_guru($id_guru, $id_kelas) {
+    global $wpdb;
+    
+    $query = $wpdb->prepare("
+        SELECT DISTINCT mata_pelajaran 
+        FROM bubs_jadwal 
+        WHERE id_guru = %d AND id_kelas = %d
+        ORDER BY mata_pelajaran
+    ", $id_guru, $id_kelas);
+    
+    return $wpdb->get_results($query, ARRAY_A);
+}
+
+/**
+ * Get kelas yang diajar oleh guru
+ */
+public static function get_kelas_guru($id_guru) {
+    global $wpdb;
+    
+    $query = $wpdb->prepare("
+        SELECT DISTINCT 
+            k.id,
+            k.nama_kelas
+        FROM bubs_jadwal j
+        INNER JOIN bubs_kelas k ON j.id_kelas = k.id
+        WHERE j.id_guru = %d
+        ORDER BY k.nama_kelas
+    ", $id_guru);
+    
+    return $wpdb->get_results($query, ARRAY_A);
+}
+
 }
