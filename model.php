@@ -119,7 +119,7 @@ class Absensi_Model {
         $prefix = 'bubs_';
 
         if (!is_array($data)) {
-            return new WP_Error('invalid_data', 'Data harus berupa array.', ['status' => 400]);
+            throw new Exception('Data harus berupa array.');
         }
 
         $inserted_ids = [];
@@ -133,7 +133,7 @@ class Absensi_Model {
             // Validasi & sanitasi tanggal
             $tanggal = sanitize_text_field($item['tanggal'] ?? '');
             if (!preg_match('/^\d{4}-\d{2}-\d{2}$/', $tanggal)) {
-                $tanggal = current_time('Y-m-d'); // fallback tanggal sekarang
+                $tanggal = current_time('Y-m-d');
             }
 
             $inserted = $wpdb->insert("{$prefix}absensi_sekolah", [

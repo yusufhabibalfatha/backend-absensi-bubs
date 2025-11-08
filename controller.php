@@ -163,8 +163,6 @@ class Absensi_Controller {
                 'result' => $result_insert,
             ], 201);
         } catch (Exception $e) {
-            error_log('API Insert absen: ' . $e->getMessage());
-
             return new WP_REST_Response([
                 'success' => false,
                 'error' => true,
