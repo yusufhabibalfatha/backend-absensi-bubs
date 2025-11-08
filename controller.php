@@ -14,63 +14,94 @@ class Absensi_Controller {
     }
 
     public static function get_jadwal_siswa_by_kriteria($request) {
-        $nama_kelas = $request->get_param('kelas');
-        $hari = $request->get_param('hari');
-        $mata_pelajaran = $request->get_param('mapel');
+        try {
+            $nama_kelas = $request->get_param('kelas');
+            $hari = $request->get_param('hari');
+            $mata_pelajaran = $request->get_param('mapel');
 
-        // Validasi parameter wajib
-        $missing_params = [];
-        if (!$nama_kelas) $missing_params[] = 'kelas';
-        if (!$hari) $missing_params[] = 'hari';
-        if (!$mata_pelajaran) $missing_params[] = 'mapel';
+            // 🔹 Validasi parameter wajib
+            $missing_params = [];
+            if (!$nama_kelas) $missing_params[] = 'kelas';
+            if (!$hari) $missing_params[] = 'hari';
+            if (!$mata_pelajaran) $missing_params[] = 'mapel';
 
-        if (!empty($missing_params)) {
-            return new WP_Error(
-                'missing_parameters',
-                'Parameter berikut wajib diisi: ' . implode(', ', $missing_params),
-                ['status' => 400]
+            if (!empty($missing_params)) {
+                return new WP_REST_Response([
+                    'success' => false,
+                    'message' => 'Parameter berikut wajib diisi: ' . implode(', ', $missing_params)
+                ], 400);
+            }
+
+            // 🔹 Validasi hari
+            $hari_valid = ['Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu'];
+            if (!in_array($hari, $hari_valid)) {
+                return new WP_REST_Response([
+                    'success' => false,
+                    'message' => 'Hari harus salah satu dari: ' . implode(', ', $hari_valid)
+                ], 400);
+            }
+
+            // 🔹 Sanitize input
+            $nama_kelas_clean = sanitize_text_field($nama_kelas);
+            $hari_clean = sanitize_text_field($hari);
+            $mata_pelajaran_clean = sanitize_text_field($mata_pelajaran);
+
+            // 🔹 Panggil model
+            $data = Absensi_Model::get_jadwal_siswa_by_kriteria(
+                $nama_kelas_clean,
+                $hari_clean,
+                $mata_pelajaran_clean
             );
-        }
 
-        // Validasi hari
-        $hari_valid = ['Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu'];
-        if (!in_array($hari, $hari_valid)) {
-            return new WP_Error(
-                'invalid_hari',
-                'Hari harus salah satu dari: ' . implode(', ', $hari_valid),
-                ['status' => 400]
+            $guru = Absensi_Model::get_guru_jadwal_siswa_by_kriteria(
+                $nama_kelas_clean,
+                $hari_clean,
+                $mata_pelajaran_clean
             );
+
+            // 🔹 Cek jika salah satu query gagal (WP_Error)
+            if (is_wp_error($data)) {
+                return new WP_REST_Response([
+                    'success' => false,
+                    'message' => 'Gagal mengambil data siswa.',
+                    'error'   => $data->get_error_message(),
+                ], 500);
+            }
+
+            if (is_wp_error($guru)) {
+                return new WP_REST_Response([
+                    'success' => false,
+                    'message' => 'Gagal mengambil data guru.',
+                    'error'   => $guru->get_error_message(),
+                ], 500);
+            }
+
+            // 🔹 Pastikan hasil guru ada datanya
+            $guru_nama = isset($guru[0]['nama']) ? $guru[0]['nama'] : '-';
+
+            return new WP_REST_Response([
+                'success' => true,
+                'jumlah_siswa' => count($data),
+                'kriteria' => [
+                    'kelas' => $nama_kelas_clean,
+                    'hari' => $hari_clean,
+                    'mata_pelajaran' => $mata_pelajaran_clean,
+                    'guru' => $guru_nama,
+                ],
+                'data' => $data,
+            ], 200);
+
+        } catch (Exception $e) {
+            // 🔹 Tangkap error PHP tak terduga
+            error_log('Controller Error: ' . $e->getMessage());
+            return new WP_REST_Response([
+                'success' => false,
+                'message' => 'Terjadi kesalahan tak terduga di server.',
+                'error'   => $e->getMessage(),
+            ], 500);
         }
-
-        // Sanitize input
-        $nama_kelas_clean = sanitize_text_field($nama_kelas);
-        $hari_clean = sanitize_text_field($hari);
-        $mata_pelajaran_clean = sanitize_text_field($mata_pelajaran);
-
-        $data = Absensi_Model::get_jadwal_siswa_by_kriteria(
-            $nama_kelas_clean, 
-            $hari_clean, 
-            $mata_pelajaran_clean
-        );
-
-        $guru = Absensi_Model::get_guru_jadwal_siswa_by_kriteria(
-            $nama_kelas_clean, 
-            $hari_clean, 
-            $mata_pelajaran_clean
-        );
-
-        return rest_ensure_response([
-            'success' => true,
-            'jumlah_siswa' => count($data),
-            'kriteria' => [
-                'kelas' => $nama_kelas_clean,
-                'hari' => $hari_clean,
-                'mata_pelajaran' => $mata_pelajaran_clean,
-                'guru' => $guru[0]['nama']
-            ],
-            'data' => $data,
-        ]);
     }
+
 
     public static function get_mata_pelajaran_by_kelas_hari($request) {
         $nama_kelas = $request->get_param('kelas');

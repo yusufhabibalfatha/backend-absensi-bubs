@@ -35,6 +35,16 @@ class Absensi_Model {
 
         $results = $wpdb->get_results($query, ARRAY_A);
 
+        if ($wpdb->last_error) {
+            error_log('Database Error: ' . $wpdb->last_error);
+            return new WP_Error(
+                'db_query_failed',
+                'Terjadi kesalahan pada query database.',
+                ['error' => $wpdb->last_error]
+            );
+        }
+
+
         return $results;
     }
 
@@ -61,6 +71,16 @@ class Absensi_Model {
         ", $nama_kelas, $hari, $mata_pelajaran);
 
         $results = $wpdb->get_results($query, ARRAY_A);
+
+        if ($wpdb->last_error) {
+            error_log('Database Error: ' . $wpdb->last_error);
+            return new WP_Error(
+                'db_query_failed',
+                'Terjadi kesalahan pada query database.',
+                ['error' => $wpdb->last_error]
+            );
+        }
+
 
         return $results;
     }
