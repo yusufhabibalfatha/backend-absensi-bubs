@@ -567,17 +567,24 @@ public static function get_rekap_presensi_kelas($id_kelas, $id_guru, $bulan = nu
 
 // Tambahkan di model.php
 
+public static function get_nama_kelas($id_kelas){
+    global $wpdb;
+
+    $data = $wpdb->get_row($wpdb->prepare("
+        SELECT nama_kelas FROM bubs_kelas WHERE id = %d
+    ", $id_kelas), ARRAY_A);
+
+    return $data;
+}
 /**
  * Get rekap presensi kelas untuk guru dengan detail
  */
 public static function get_rekap_presensi_kelas_detailed($id_kelas, $id_guru, $bulan = null, $tahun = null, $mapel = null) {
     global $wpdb;
 
-    return $id_kelas;
-    
     if (!$bulan) $bulan = date('m');
     if (!$tahun) $tahun = date('Y');
-    
+
     // Validasi bahwa guru memang mengajar kelas ini
     $validasi = $wpdb->get_var($wpdb->prepare("
         SELECT COUNT(*) FROM bubs_jadwal 
@@ -646,20 +653,44 @@ public static function get_mata_pelajaran_guru($id_guru, $id_kelas) {
 /**
  * Get kelas yang diajar oleh guru
  */
-public static function get_kelas_guru($id_guru) {
-    global $wpdb;
+// public static function get_kelas_guru($id_guru) {
+//     global $wpdb;
     
-    $query = $wpdb->prepare("
-        SELECT DISTINCT 
-            k.id,
-            k.nama_kelas
-        FROM bubs_jadwal j
-        INNER JOIN bubs_kelas k ON j.id_kelas = k.id
-        WHERE j.id_guru = %d
-        ORDER BY k.nama_kelas
-    ", $id_guru);
+//     $query = $wpdb->prepare("
+//         SELECT DISTINCT 
+//             k.id,
+//             k.nama_kelas
+//         FROM bubs_jadwal j
+//         INNER JOIN bubs_kelas k ON j.id_kelas = k.id
+//         WHERE j.id_guru = %d
+//         ORDER BY k.nama_kelas
+//     ", $id_guru);
     
-    return $wpdb->get_results($query, ARRAY_A);
-}
+//     return $wpdb->get_results($query, ARRAY_A);
+// }
+
+
+    // Model function untuk mengambil jadwal by guru ID
+    public static function bubs_get_jadwal_by_guru_id($guru_id) {
+        global $wpdb;
+        
+        $query = $wpdb->prepare("
+            SELECT 
+                g.nama AS nama_guru,
+                k.nama_kelas,
+                j.mata_pelajaran,
+                j.hari
+            FROM bubs_jadwal AS j
+            JOIN bubs_guru AS g ON g.id = j.id_guru
+            JOIN bubs_kelas AS k ON k.id = j.id_kelas
+            WHERE g.id = %d
+            ORDER BY j.hari
+        ", $guru_id);
+
+        $results = $wpdb->get_results($query, ARRAY_A);
+        
+        return $results;
+    }
+
 
 }

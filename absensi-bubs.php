@@ -173,25 +173,25 @@ add_action('rest_api_init', function () {
 
     // Tambahkan di rest_api_init
 
-// Rekap presensi detail untuk guru
-register_rest_route('absensi-bubs/v1', '/rekap-presensi-kelas-detailed', [
-    'methods' => 'GET',
-    'callback' => ['Absensi_Controller', 'get_rekap_presensi_kelas_detailed'],
-    'permission_callback' => '__return_true',
-]);
+    // Rekap presensi detail untuk guru
+    register_rest_route('absensi-bubs/v1', '/rekap-presensi-kelas-detailed', [
+        'methods' => 'GET',
+        'callback' => ['Absensi_Controller', 'get_rekap_presensi_kelas_detailed'],
+        'permission_callback' => '__return_true',
+    ]);
 
-// Kelas yang diajar guru
-register_rest_route('absensi-bubs/v1', '/kelas-guru', [
-    'methods' => 'GET',
-    'callback' => ['Absensi_Controller', 'get_kelas_guru'],
-    'permission_callback' => '__return_true',
-]);
+    // Kelas yang diajar guru
+    register_rest_route('absensi-bubs/v1', '/kelas-guru', [
+        'methods' => 'GET',
+        'callback' => ['Absensi_Controller', 'get_kelas_dan_mapel_guru'],
+        'permission_callback' => '__return_true',
+    ]);
 
-// Export to Excel
-register_rest_route('absensi-bubs/v1', '/export-rekap-excel', [
-    'methods' => 'GET',
-    'callback' => ['Absensi_Controller', 'export_rekap_excel'],
-    'permission_callback' => '__return_true',
+    // Export to Excel
+    register_rest_route('absensi-bubs/v1', '/export-rekap-excel', [
+        'methods' => 'GET',
+        'callback' => ['Absensi_Controller', 'export_rekap_excel'],
+        'permission_callback' => '__return_true',
 ]);
 });
 
@@ -199,5 +199,10 @@ register_rest_route('absensi-bubs/v1', '/export-rekap-excel', [
 add_action('init', function() {
     header("Access-Control-Allow-Origin: http://localhost:5173");
     header("Access-Control-Allow-Methods: GET, POST, OPTIONS, PUT, DELETE");
-    header("Access-Control-Allow-Headers: Authorization, Content-Type");
+    header("Access-Control-Allow-Headers: Authorization, Content-Type, X-User-Data");
+
+    if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
+        header("HTTP/1.1 200 OK");
+        exit;
+    }
 });

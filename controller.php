@@ -343,7 +343,7 @@ public static function login_user($request) {
 public static function get_presensi_siswa($request) {
     try {
         $user = self::get_current_user();
-        
+
         if (!$user || $user['role'] !== 'SISWA') {
             throw new Exception('Akses ditolak. Hanya untuk siswa.');
         }
@@ -445,25 +445,38 @@ public static function get_rekap_presensi_kelas_detailed($request) {
         $bulan = $request->get_param('bulan') ?: date('m');
         $tahun = $request->get_param('tahun') ?: date('Y');
         $mapel = $request->get_param('mapel');
-        
+
         if (!$id_kelas) {
             throw new Exception('Parameter kelas wajib diisi.');
         }
-        
+        if (!$bulan) {
+            throw new Exception('Parameter bulan wajib diisi.');
+        }
+        if (!$tahun) {
+            throw new Exception('Parameter tahun wajib diisi.');
+        }
+        if (!$mapel) {
+            throw new Exception('Parameter mapel wajib diisi.');
+        }
+
         $data = Absensi_Model::get_rekap_presensi_kelas_detailed(
             $id_kelas, $user['id_guru'], $bulan, $tahun, $mapel
         );
-        
+
         if (is_wp_error($data)) {
             return $data;
         }
-        
+
         // Get additional info for response
-        $kelas_info = $wpdb->get_row($wpdb->prepare("
-            SELECT nama_kelas FROM bubs_kelas WHERE id = %d
-        ", $id_kelas), ARRAY_A);
+        $kelas_info = Absensi_Model::get_nama_kelas($id_kelas);
         
         $mapel_list = Absensi_Model::get_mata_pelajaran_guru($user['id_guru'], $id_kelas);
+
+        // return new WP_REST_Response([
+        //     'success' => true,
+        //     'data' => $mapel_list,
+        //     'message' => 'ini response coba-coba mapel list'
+        // ], 200);
         
         return new WP_REST_Response([
             'success' => true,
@@ -500,6 +513,29 @@ public static function get_kelas_guru($request) {
         }
         
         $data = Absensi_Model::get_kelas_guru($user['id_guru']);
+        
+        return new WP_REST_Response([
+            'success' => true,
+            'data' => $data
+        ], 200);
+        
+    } catch (Exception $e) {
+        return new WP_REST_Response([
+            'success' => false,
+            'message' => $e->getMessage()
+        ], 400);
+    }
+}
+
+public static function get_kelas_dan_mapel_guru($request) {
+    try {
+        $user = self::get_current_user();
+        
+        if (!$user || $user['role'] !== 'GURU') {
+            throw new Exception('Akses ditolak. Hanya untuk guru.');
+        }
+        
+        $data = Absensi_Model::bubs_get_jadwal_by_guru_id($user['id_guru']);
         
         return new WP_REST_Response([
             'success' => true,
