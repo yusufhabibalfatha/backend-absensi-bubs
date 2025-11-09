@@ -390,12 +390,12 @@ public static function verify_login($username, $password) {
     }
 
     // Verify password
-    // if (!password_verify($password, $user['password'])) {
+    // if (password_verify($password, $user['password'])) {
     //     return new WP_Error('invalid_password', 'Password salah.');
     // }
-    if ($password === $user['password']) {
-        return new WP_Error('invalid_password', 'Password salah.');
-    }
+    // if ($password === $user['password']) {
+    //     return new WP_Error('invalid_password', 'Password salah.');
+    // }
     
     // Get additional user data based on role
     if ($user['role'] === 'SISWA') {

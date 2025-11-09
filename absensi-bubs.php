@@ -13,6 +13,11 @@ defined('ABSPATH') || exit;
 require_once plugin_dir_path(__FILE__) . 'model.php';
 require_once plugin_dir_path(__FILE__) . 'controller.php';
 
+// TAMBAHKAN INI - FITUR TUGAS & MATERI
+require_once plugin_dir_path(__FILE__) . 'tugas-endpoints.php';
+require_once plugin_dir_path(__FILE__) . 'materi-endpoints.php';
+require_once plugin_dir_path(__FILE__) . 'submission-endpoints.php';
+
 // API
 // GET /wp-json/absensi-bubs/v1/
 // GET /wp-json/absensi-bubs/v1/jadwal-siswa?kelas=Kelas 7&hari=Sabtu&mapel=Informatika
@@ -114,7 +119,7 @@ add_action('rest_api_init', function () {
         'permission_callback' => '__return_true',
         'args' => [
             'kegiatan' => [
-                'required' => true,
+                'required' => false,
                 'validate_callback' => function($param) {
                     return is_numeric($param) && $param > 0;
                 }
@@ -192,7 +197,62 @@ add_action('rest_api_init', function () {
         'methods' => 'GET',
         'callback' => ['Absensi_Controller', 'export_rekap_excel'],
         'permission_callback' => '__return_true',
-]);
+    ]);
+
+    // =============================================
+    // ENDPOINT BARU UNTUK TUGAS & MATERI SYSTEM
+    // =============================================
+
+    // TUGAS ENDPOINTS
+    register_rest_route('absensi-bubs/v1', '/tugas/create', [
+        'methods' => 'POST',
+        'callback' => 'bubs_create_tugas',
+        'permission_callback' => '__return_true',
+    ]);
+
+    register_rest_route('absensi-bubs/v1', '/tugas/guru/(?P<id_guru>\d+)', [
+        'methods' => 'GET',
+        'callback' => 'bubs_get_tugas_by_guru',
+        'permission_callback' => '__return_true',
+    ]);
+
+    register_rest_route('absensi-bubs/v1', '/tugas/siswa/(?P<id_siswa>\d+)', [
+        'methods' => 'GET',
+        'callback' => 'bubs_get_tugas_for_siswa',
+        'permission_callback' => '__return_true',
+    ]);
+
+    // MATERI ENDPOINTS
+    register_rest_route('absensi-bubs/v1', '/materi/upload', [
+        'methods' => 'POST',
+        'callback' => 'bubs_upload_materi',
+        'permission_callback' => '__return_true',
+    ]);
+
+    register_rest_route('absensi-bubs/v1', '/materi/guru/(?P<id_guru>\d+)', [
+        'methods' => 'GET',
+        'callback' => 'bubs_get_materi_by_guru',
+        'permission_callback' => '__return_true',
+    ]);
+
+    register_rest_route('absensi-bubs/v1', '/materi/siswa/(?P<id_kelas>\d+)', [
+        'methods' => 'GET',
+        'callback' => 'bubs_get_materi_for_siswa',
+        'permission_callback' => '__return_true',
+    ]);
+
+    // SUBMISSION ENDPOINTS
+    register_rest_route('absensi-bubs/v1', '/submission/create', [
+        'methods' => 'POST',
+        'callback' => 'bubs_create_submission',
+        'permission_callback' => '__return_true',
+    ]);
+
+    register_rest_route('absensi-bubs/v1', '/submission/tugas/(?P<id_tugas>\d+)', [
+        'methods' => 'GET',
+        'callback' => 'bubs_get_submission_by_tugas',
+        'permission_callback' => '__return_true',
+    ]);
 });
 
 
