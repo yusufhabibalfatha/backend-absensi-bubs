@@ -381,7 +381,7 @@ public static function verify_login($username, $password) {
 
     // Cari user by username
     $user = $wpdb->get_row($wpdb->prepare(
-        "SELECT * FROM {$users_table} WHERE username = %s", 
+        "SELECT username, role, id_siswa FROM {$users_table} WHERE username = %s", 
         $username
     ), ARRAY_A);
 
@@ -400,7 +400,7 @@ public static function verify_login($username, $password) {
     // Get additional user data based on role
     if ($user['role'] === 'SISWA') {
         $siswa_data = $wpdb->get_row($wpdb->prepare(
-            "SELECT s.nama_lengkap, k.nama_kelas 
+            "SELECT s.nama_lengkap, k.nama_kelas, k.id as id_kelas 
              FROM bubs_siswa s 
              LEFT JOIN bubs_kelas k ON s.id_kelas = k.id 
              WHERE s.id = %d", 
@@ -409,6 +409,7 @@ public static function verify_login($username, $password) {
         
         $user['nama_lengkap'] = $siswa_data['nama_lengkap'] ?? '';
         $user['kelas'] = $siswa_data['nama_kelas'] ?? '';
+        $user['id_kelas'] = $siswa_data['id_kelas'];
         
     } elseif ($user['role'] === 'GURU') {
         $guru_data = $wpdb->get_row($wpdb->prepare(
