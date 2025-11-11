@@ -100,10 +100,10 @@ function bubs_get_materi_for_siswa($request) {
     
     $id_kelas = $request['id_kelas'];
 
-    return new WP_REST_Response([
-        'success' => true,
-        'data' => $id_kelas
-    ], 200);
+    // return new WP_REST_Response([
+    //     'success' => true,
+    //     'data' => $id_kelas
+    // ], 200);
     
     $materi = $wpdb->get_results($wpdb->prepare("
         SELECT m.*, j.mata_pelajaran, g.nama as nama_guru
