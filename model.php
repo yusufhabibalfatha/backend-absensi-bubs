@@ -381,7 +381,7 @@ public static function verify_login($username, $password) {
 
     // Cari user by username
     $user = $wpdb->get_row($wpdb->prepare(
-        "SELECT username, role, id_siswa FROM {$users_table} WHERE username = %s", 
+        "SELECT username, role, id_siswa, id_guru FROM {$users_table} WHERE username = %s", 
         $username
     ), ARRAY_A);
 
