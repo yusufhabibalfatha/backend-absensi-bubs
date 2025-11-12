@@ -2,11 +2,11 @@
 // MATERI ENDPOINTS
 add_action('rest_api_init', function () {
     // UPLOAD MATERI
-    register_rest_route('bubs/v1', '/materi/upload', array(
-        'methods' => 'POST',
-        'callback' => 'bubs_upload_materi',
-        'permission_callback' => '__return_true',
-    ));
+    // register_rest_route('bubs/v1', '/materi/upload', array(
+    //     'methods' => 'POST',
+    //     'callback' => 'bubs_upload_materi',
+    //     'permission_callback' => '__return_true',
+    // ));
 
     // GET MATERI BY GURU
     register_rest_route('bubs/v1', '/materi/guru/(?P<id_guru>\d+)', array(
@@ -40,7 +40,7 @@ function bubs_get_materi_by_guru($request) {
     return rest_ensure_response($materi);
 }
 // UPLOAD MATERI
-function bubs_upload_materi($request) {
+function bubs_upload_materi(WP_REST_Request $request) {
     global $wpdb;
     
     $id_guru = $request['id_guru'];
@@ -48,15 +48,24 @@ function bubs_upload_materi($request) {
     $judul_materi = sanitize_text_field($request['judul_materi']);
     $deskripsi = sanitize_textarea_field($request['deskripsi']);
     
-    // Handle file upload
-    if (empty($_FILES['file_materi'])) {
-        return rest_ensure_response(array(
-            'success' => false,
-            'message' => 'File materi diperlukan'
-        ), 400);
+    // Ambil file yang dikirim (FormData)
+    $files = $request->get_file_params();
+
+    if (empty($files['file_materi'])) {
+        return new WP_REST_Response(['message' => 'File tidak ditemukan'], 400);
     }
+
+    $file = $files['file_materi'];
+
+    // Gunakan fungsi media upload WordPress
+    require_once(ABSPATH . 'wp-admin/includes/file.php');
+    require_once(ABSPATH . 'wp-admin/includes/media.php');
+    require_once(ABSPATH . 'wp-admin/includes/image.php');
+
+    // Upload ke direktori wp-content/uploads
+    $upload = wp_handle_upload($file, ['test_form' => false]);
     
-    $upload = wp_handle_upload($_FILES['file_materi'], array('test_form' => false));
+    // $upload = wp_handle_upload($_FILES['file_materi'], array('test_form' => false));
     if (isset($upload['error'])) {
         return rest_ensure_response(array(
             'success' => false,

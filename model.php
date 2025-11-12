@@ -700,7 +700,8 @@ public static function get_mata_pelajaran_guru($id_guru, $id_kelas) {
                 g.nama AS nama_guru,
                 k.nama_kelas,
                 j.mata_pelajaran,
-                j.hari
+                j.hari,
+                j.id
             FROM bubs_jadwal AS j
             JOIN bubs_guru AS g ON g.id = j.id_guru
             JOIN bubs_kelas AS k ON k.id = j.id_kelas

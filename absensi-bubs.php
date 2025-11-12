@@ -199,6 +199,13 @@ add_action('rest_api_init', function () {
         'permission_callback' => '__return_true',
     ]);
 
+    register_rest_route('bubs/v1', '/materi/upload', array(
+        'methods' => 'POST',
+        'callback' => 'bubs_upload_materi',
+        'permission_callback' => '__return_true',
+    ));
+
+
     // =============================================
     // ENDPOINT BARU UNTUK TUGAS & MATERI SYSTEM
     // =============================================

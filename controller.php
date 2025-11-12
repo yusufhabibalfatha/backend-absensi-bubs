@@ -558,13 +558,7 @@ public static function get_kelas_guru($request) {
 
 public static function get_kelas_dan_mapel_guru($request) {
     try {
-        $user = self::get_current_user();
-        
-        if (!$user || $user['role'] !== 'GURU') {
-            throw new Exception('Akses ditolak. Hanya untuk guru.');
-        }
-        
-        $data = Absensi_Model::bubs_get_jadwal_by_guru_id($user['id_guru']);
+        $data = Absensi_Model::bubs_get_jadwal_by_guru_id($request['id_guru']);
         
         return new WP_REST_Response([
             'success' => true,
