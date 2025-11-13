@@ -73,7 +73,7 @@ function bubs_upload_materi(WP_REST_Request $request) {
         ), 400);
     }
     
-    $file_path = $upload['file'];
+    $file_path = $upload['url'];
     $tipe_file = pathinfo($file_path, PATHINFO_EXTENSION);
     
     $result = $wpdb->insert(

@@ -205,6 +205,19 @@ add_action('rest_api_init', function () {
         'permission_callback' => '__return_true',
     ));
 
+    register_rest_route('bubs/v1', '/tugas/create', array(
+        'methods' => 'POST',
+        'callback' => 'bubs_create_tugas',
+        'permission_callback' => '__return_true',
+    ));
+
+    register_rest_route('bubs/v1', '/submission/create', array(
+        'methods' => 'POST',
+        'callback' => 'bubs_create_submission',
+        'permission_callback' => '__return_true',
+    ));
+
+
 
     // =============================================
     // ENDPOINT BARU UNTUK TUGAS & MATERI SYSTEM
