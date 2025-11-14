@@ -369,10 +369,14 @@ public static function login_user($request) {
 /**
  * Get presensi history for siswa
  */
-public static function get_presensi_siswa($request) {
+public static function get_presensi_siswa(WP_REST_Request $request) {
     try {
-        $user = self::get_current_user();
+        $user = self::get_current_user($request);
 
+        if (!$user) {
+            return new WP_Error('no_user_data', 'User data not found in request headers', ['status' => 400]);
+        }
+        
         if (!$user || $user['role'] !== 'SISWA') {
             throw new Exception('Akses ditolak. Hanya untuk siswa.');
         }
@@ -380,7 +384,7 @@ public static function get_presensi_siswa($request) {
         $bulan = $request->get_param('bulan') ?: date('m');
         $tahun = $request->get_param('tahun') ?: date('Y');
 
-        $data = Absensi_Model::get_presensi_siswa($user['id_siswa'], $bulan, $tahun);
+        $data = Absensi_Model::get_presensi_siswa_model($user['id_siswa'], $bulan, $tahun);
         
         return new WP_REST_Response([
             'success' => true,
@@ -445,17 +449,38 @@ public static function get_rekap_presensi_kelas($request) {
  * Helper function to get current user from localStorage data
  * Note: Ini sederhana dulu, nanti bisa enhance dengan proper session/token
  */
-private static function get_current_user() {
-    // Untuk MVP, kita terima user data via headers
-    // Nanti bisa enhance dengan proper authentication
-    $user_data = isset($_SERVER['HTTP_X_USER_DATA']) ? $_SERVER['HTTP_X_USER_DATA'] : '';
+// private static function get_current_user() {
+//     // Untuk MVP, kita terima user data via headers
+//     // Nanti bisa enhance dengan proper authentication
+//     $user_data = isset($_SERVER['HTTP_X_USER_DATA']) ? $_SERVER['HTTP_X_USER_DATA'] : '';
     
-    if ($user_data) {
-        return json_decode(stripslashes($user_data), true);
+//     if ($user_data) {
+//         return json_decode(stripslashes($user_data), true);
+//     }
+    
+//     return null;
+// }
+private static function get_current_user(WP_REST_Request $request) {
+    // Ambil header X-User-Data
+    $user_data_json = $request->get_header('X-User-Data');
+
+    // Jika header tidak ada, kembalikan null
+    if (!$user_data_json) {
+        return null;
     }
-    
-    return null;
+
+    // Decode JSON menjadi array
+    $user_data = json_decode($user_data_json, true);
+
+    // Cek apakah JSON valid
+    if (json_last_error() !== JSON_ERROR_NONE) {
+        return null; // atau bisa lempar error
+    }
+
+    return $user_data;
 }
+
+
 
 // Tambahkan di controller.php
 
@@ -464,7 +489,11 @@ private static function get_current_user() {
  */
 public static function get_rekap_presensi_kelas_detailed($request) {
     try {
-        $user = self::get_current_user();
+        $user = self::get_current_user($request);
+
+        if (!$user) {
+            return new WP_Error('no_user_data', 'User data not found in request headers', ['status' => 400]);
+        }
         
         if (!$user || $user['role'] !== 'GURU') {
             throw new Exception('Akses ditolak. Hanya untuk guru.');
@@ -535,7 +564,11 @@ public static function get_rekap_presensi_kelas_detailed($request) {
  */
 public static function get_kelas_guru($request) {
     try {
-        $user = self::get_current_user();
+        $user = self::get_current_user($request);
+
+        if (!$user) {
+            return new WP_Error('no_user_data', 'User data not found in request headers', ['status' => 400]);
+        }
         
         if (!$user || $user['role'] !== 'GURU') {
             throw new Exception('Akses ditolak. Hanya untuk guru.');

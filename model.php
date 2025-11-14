@@ -431,7 +431,7 @@ public static function verify_login($username, $password) {
 /**
  * Get presensi history for siswa
  */
-public static function get_presensi_siswa($id_siswa, $bulan = null, $tahun = null) {
+public static function get_presensi_siswa_model($id_siswa, $bulan, $tahun) {
     global $wpdb;
     
     // Default to current month/year if not specified
