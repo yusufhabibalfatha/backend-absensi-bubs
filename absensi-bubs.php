@@ -217,6 +217,24 @@ add_action('rest_api_init', function () {
         'permission_callback' => '__return_true',
     ));
 
+    register_rest_route('bubs/v1', '/submission/tugas/(?P<id_tugas>\d+)', array(
+        'methods' => 'GET',
+        'callback' => 'bubs_get_submission_by_tugas', // tidak ada
+        'permission_callback' => '__return_true',
+    ));
+
+    register_rest_route('bubs/v1', '/tugas/guru/(?P<id_guru>\d+)', array(
+        'methods' => 'GET',
+        'callback' => 'bubs_get_tugas_by_guru',
+        'permission_callback' => '__return_true',
+    ));
+
+    // BERI NILAI
+    register_rest_route('absensi-bubs/v1', '/nilai/beri', array(
+        'methods' => 'POST',
+        'callback' => 'bubs_beri_nilai',
+        'permission_callback' => '__return_true',
+    ));
 
 
     // =============================================

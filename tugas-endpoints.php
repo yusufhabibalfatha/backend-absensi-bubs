@@ -9,11 +9,11 @@ add_action('rest_api_init', function () {
     // ));
 
     // GET TUGAS BY GURU
-    register_rest_route('bubs/v1', '/tugas/guru/(?P<id_guru>\d+)', array(
-        'methods' => 'GET',
-        'callback' => 'bubs_get_tugas_by_guru',
-        'permission_callback' => '__return_true',
-    ));
+    // register_rest_route('bubs/v1', '/tugas/guru/(?P<id_guru>\d+)', array(
+    //     'methods' => 'GET',
+    //     'callback' => 'bubs_get_tugas_by_guru',
+    //     'permission_callback' => '__return_true',
+    // ));
 
     // GET TUGAS FOR SISWA
     register_rest_route('bubs/v1', '/tugas/siswa/(?P<id_siswa>\d+)', array(
@@ -102,11 +102,11 @@ function bubs_create_tugas(WP_REST_Request $request) {
 }
 
 // GET TUGAS BY GURU
-function bubs_get_tugas_by_guru(WP_REST_REQUEST $request) {
+function bubs_get_tugas_by_guru(WP_REST_Request $request) {
     global $wpdb;
     
     $id_guru = $request['id_guru'];
-    
+
     $query = $wpdb->prepare("
         SELECT t.*, j.mata_pelajaran 
         FROM bubs_tugas t 
@@ -116,6 +116,11 @@ function bubs_get_tugas_by_guru(WP_REST_REQUEST $request) {
     ", $id_guru);
 
     $tugas = $wpdb->get_results($query);
+
+    // return new WP_REST_Response([
+    //     'success' => true,
+    //     "data" => $tugas
+    // ], 200);
     
     return rest_ensure_response($tugas);
 }

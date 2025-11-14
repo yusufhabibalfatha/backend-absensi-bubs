@@ -9,11 +9,11 @@ add_action('rest_api_init', function () {
     // ));
 
     // GET SUBMISSION BY TUGAS
-    register_rest_route('bubs/v1', '/submission/tugas/(?P<id_tugas>\d+)', array(
-        'methods' => 'GET',
-        'callback' => 'bubs_get_submission_by_tugas', // tidak ada
-        'permission_callback' => '__return_true',
-    ));
+    // register_rest_route('bubs/v1', '/submission/tugas/(?P<id_tugas>\d+)', array(
+    //     'methods' => 'GET',
+    //     'callback' => 'bubs_get_submission_by_tugas', // tidak ada
+    //     'permission_callback' => '__return_true',
+    // ));
 });
 
 // GET SUBMISSION BY TUGAS
@@ -37,6 +37,11 @@ function bubs_get_submission_by_tugas($request) {
         ORDER BY s.submitted_at DESC
     ", $id_tugas));
     
+    // return new WP_REST_Response([
+    //     'success' => true,
+    //     "data" => $submissions
+    // ], 200);
+
     return rest_ensure_response($submissions);
 }
 // CREATE SUBMISSION
@@ -126,6 +131,76 @@ function bubs_create_submission( $request) {
         return rest_ensure_response(array(
             'success' => false,
             'message' => 'Gagal mengumpulkan tugas'
+        ), 400);
+    }
+}
+
+// BERI NILAI
+function bubs_beri_nilai(WP_REST_Request $request) {
+    global $wpdb;
+    
+    $id_submission = $request['id_submission'];
+    $id_guru = $request['id_guru'];
+    $nilai = intval($request['nilai']);
+    $catatan_guru = sanitize_textarea_field($request['catatan_guru']);
+
+    // return new WP_REST_Response([
+    //     'success' => true,
+    //     "data" => $id_submission
+    // ], 200);
+    
+    // Cek apakah sudah ada nilai
+    $existing_nilai = $wpdb->get_var($wpdb->prepare("
+        SELECT id FROM bubs_nilai WHERE id_submission = %d
+    ", $id_submission));
+    
+    if ($existing_nilai) {
+        // Update nilai existing
+        $result = $wpdb->update(
+            'bubs_nilai',
+            array(
+                'nilai' => $nilai,
+                'catatan_guru' => $catatan_guru,
+                'graded_at' => current_time('mysql')
+            ),
+            array('id_submission' => $id_submission),
+            array('%d', '%s', '%s'),
+            array('%d')
+        );
+    } else {
+        // Insert nilai baru
+        $result = $wpdb->insert(
+            'bubs_nilai',
+            array(
+                'id_submission' => $id_submission,
+                'id_guru' => $id_guru,
+                'nilai' => $nilai,
+                'catatan_guru' => $catatan_guru
+            ),
+            array('%d', '%d', '%d', '%s')
+        );
+    }
+    
+    // Update status submission
+    if ($result) {
+        $wpdb->update(
+            'bubs_submission',
+            array('status' => 'graded'),
+            array('id' => $id_submission),
+            array('%s'),
+            array('%d')
+        );
+    }
+    
+    if ($result !== false) {
+        return rest_ensure_response(array(
+            'success' => true,
+            'message' => 'Nilai berhasil disimpan'
+        ));
+    } else {
+        return rest_ensure_response(array(
+            'success' => false,
+            'message' => 'Gagal menyimpan nilai'
         ), 400);
     }
 }
