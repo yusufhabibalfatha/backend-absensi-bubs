@@ -487,7 +487,7 @@ private static function get_current_user(WP_REST_Request $request) {
 /**
  * Get rekap presensi kelas detail untuk guru
  */
-public static function get_rekap_presensi_kelas_detailed($request) {
+public static function get_rekap_presensi_kelas_detailed(WP_REST_Request $request) {
     try {
         $user = self::get_current_user($request);
 
@@ -499,7 +499,8 @@ public static function get_rekap_presensi_kelas_detailed($request) {
             throw new Exception('Akses ditolak. Hanya untuk guru.');
         }
         
-        $id_kelas = $request->get_param('kelas');
+        $nama_kelas = $request->get_param('kelas');
+        $id_kelas = Absensi_Model::get_id_kelas_by_name($nama_kelas);
         $bulan = $request->get_param('bulan') ?: date('m');
         $tahun = $request->get_param('tahun') ?: date('Y');
         $mapel = $request->get_param('mapel');
@@ -520,6 +521,14 @@ public static function get_rekap_presensi_kelas_detailed($request) {
         $data = Absensi_Model::get_rekap_presensi_kelas_detailed(
             $id_kelas, $user['id_guru'], $bulan, $tahun, $mapel
         );
+
+        // return new WP_REST_Response([
+        //     'success' => true,
+        //     'data' => $data,
+        //     'message' => 'ini response coba-coba mapel list'
+        // ], 200);
+
+        
 
         if (is_wp_error($data)) {
             return $data;
@@ -589,9 +598,24 @@ public static function get_kelas_guru($request) {
     }
 }
 
-public static function get_kelas_dan_mapel_guru($request) {
+public static function get_kelas_dan_mapel_guru(WP_REST_Request $request) {
     try {
-        $data = Absensi_Model::bubs_get_jadwal_by_guru_id($request['id_guru']);
+        $user = self::get_current_user($request);
+
+        if (!$user) {
+            return new WP_Error('no_user_data', 'User data not found in request headers', ['status' => 400]);
+        }
+        
+        if (!$user || $user['role'] !== 'GURU') {
+            throw new Exception('Akses ditolak. Hanya untuk guru.');
+        }
+
+        // return new WP_REST_Response([
+        //     'success' => true,
+        //     'data' => $user['id_guru']
+        // ], 200);
+
+        $data = Absensi_Model::bubs_get_jadwal_by_guru_id($user['id_guru']);
         
         return new WP_REST_Response([
             'success' => true,
