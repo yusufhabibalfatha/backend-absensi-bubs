@@ -1,25 +1,13 @@
 <?php
 
 class Absensi_Controller {
-
-    public static function handle_request($request) {
-        return rest_ensure_response([
-            'message' => 'API Absensi Bubs - Endpoint tersedia',
-            'endpoints' => [
-                '/jadwal-siswa' => 'GET - Mendapatkan jadwal dan data siswa berdasarkan kriteria',
-                '/mata-pelajaran' => 'GET - Mendapatkan mata pelajaran berdasarkan kelas dan hari'
-            ],
-            'time' => current_time('mysql'),
-        ]);
-    }
-
-    public static function get_jadwal_siswa_by_kriteria($request) {
+    // controller dipakai
+    public static function get_jadwal_siswa_by_kriteria(WP_REST_Request $request) {
         try {
             $nama_kelas = $request->get_param('kelas');
             $hari = $request->get_param('hari');
             $mata_pelajaran = $request->get_param('mapel');
 
-            // 🔹 Validasi parameter wajib
             $missing_params = [];
             if (!$nama_kelas) $missing_params[] = 'kelas';
             if (!$hari) $missing_params[] = 'hari';
@@ -32,7 +20,6 @@ class Absensi_Controller {
                 ], 400);
             }
 
-            // 🔹 Validasi hari
             $hari_valid = ['Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu'];
             if (!in_array($hari, $hari_valid)) {
                 return new WP_REST_Response([
@@ -41,12 +28,10 @@ class Absensi_Controller {
                 ], 400);
             }
 
-            // 🔹 Sanitize input
             $nama_kelas_clean = sanitize_text_field($nama_kelas);
             $hari_clean = sanitize_text_field($hari);
             $mata_pelajaran_clean = sanitize_text_field($mata_pelajaran);
 
-            // 🔹 Panggil model
             $data = Absensi_Model::get_jadwal_siswa_by_kriteria(
                 $nama_kelas_clean,
                 $hari_clean,
@@ -59,7 +44,6 @@ class Absensi_Controller {
                 $mata_pelajaran_clean
             );
 
-            // 🔹 Cek jika salah satu query gagal (WP_Error)
             if (is_wp_error($data)) {
                 return new WP_REST_Response([
                     'success' => false,
@@ -76,7 +60,6 @@ class Absensi_Controller {
                 ], 500);
             }
 
-            // 🔹 Pastikan hasil guru ada datanya
             $guru_nama = isset($guru[0]['nama']) ? $guru[0]['nama'] : '-';
 
             return new WP_REST_Response([
@@ -92,7 +75,6 @@ class Absensi_Controller {
             ], 200);
 
         } catch (Exception $e) {
-            // 🔹 Tangkap error PHP tak terduga
             error_log('Controller Error: ' . $e->getMessage());
             return new WP_REST_Response([
                 'success' => false,
@@ -102,8 +84,7 @@ class Absensi_Controller {
         }
     }
 
-
-    public static function get_mata_pelajaran_by_kelas_hari($request) {
+    public static function get_mata_pelajaran_by_kelas_hari(WP_REST_Request $request) {
         $nama_kelas = $request->get_param('kelas');
         $hari = $request->get_param('hari');
 
@@ -146,7 +127,8 @@ class Absensi_Controller {
         ]);
     }
 
-    public static function insert_absensi_sekolah($request)
+    // controller dipakai
+    public static function insert_absensi_sekolah(WP_REST_Request $request)
     {
         try {
             $data = $request->get_json_params();
@@ -172,13 +154,11 @@ class Absensi_Controller {
     }
 
     // =============================================
-    // CONTROLLER BARU UNTUK ABSENSI KEGIATAN
+    // CONTROLLER UNTUK ABSENSI KEGIATAN
     // =============================================
 
-    /**
-     * Get semua jenis kegiatan
-     */
-    public static function get_jenis_kegiatan($request) {
+    // controller dipakai
+    public static function get_jenis_kegiatan(WP_REST_Request $request) {
         try {
             $data = Absensi_Model::get_jenis_kegiatan();
 
@@ -196,10 +176,8 @@ class Absensi_Controller {
         }
     }
 
-    /**
-     * Get kelas boarding
-     */
-    public static function get_kelas_boarding($request) {
+    // controller dipakai
+    public static function get_kelas_boarding(WP_REST_Request $request) {
         try {
             $data = Absensi_Model::get_kelas_boarding();
 
@@ -217,10 +195,8 @@ class Absensi_Controller {
         }
     }
 
-    /**
-     * Get semua kamar
-     */
-    public static function get_kamar($request) {
+    // controller dipakai
+    public static function get_kamar(WP_REST_Request $request) {
         try {
             $data = Absensi_Model::get_kamar();
 
@@ -238,15 +214,12 @@ class Absensi_Controller {
         }
     }
 
-    /**
-     * Get siswa untuk kegiatan
-     */
-    public static function get_siswa_kegiatan($request) {
+    // controller dipakai
+    public static function get_siswa_kegiatan(WP_REST_Request $request) {
         $id_kegiatan = $request->get_param('kegiatan');
         $id_kelas = $request->get_param('kelas');
         $id_kamar = $request->get_param('kamar');
 
-        // Validasi parameter
         if (!$id_kegiatan) {
             return new WP_Error(
                 'missing_parameters',
@@ -255,7 +228,6 @@ class Absensi_Controller {
             );
         }
 
-        // Sanitize input
         $id_kegiatan_clean = intval($id_kegiatan);
         $id_kelas_clean = $id_kelas ? intval($id_kelas) : NULL;
         $id_kamar_clean = $id_kamar ? intval($id_kamar) : NULL;
@@ -276,7 +248,6 @@ class Absensi_Controller {
                 );
             }
 
-            // Handle error dari model
             if (is_wp_error($data)) {
                 return $data;
             }
@@ -295,10 +266,8 @@ class Absensi_Controller {
         }
     }
 
-    /**
-     * Insert absensi kegiatan
-     */
-    public static function insert_absensi_kegiatan($request) {
+    // controller dipakai
+    public static function insert_absensi_kegiatan(WP_REST_Request $request) {
         try {
             $data = $request->get_json_params();
 
@@ -327,81 +296,74 @@ class Absensi_Controller {
             ], 400);
         }
     }
-// Tambahkan di controller.php (setelah fungsi yang sudah ada)
 
-/**
- * Handle user login
- */
-public static function login_user($request) {
-    try {
-        $data = $request->get_json_params();
-        
-        $username = sanitize_text_field($data['username'] ?? '');
-        $password = sanitize_text_field($data['password'] ?? '');
+    // controller dipakai
+    public static function login_user(WP_REST_Request $request) {
+        try {
+            $data = $request->get_json_params();
+            
+            $username = sanitize_text_field($data['username'] ?? '');
+            $password = sanitize_text_field($data['password'] ?? '');
 
-        // Validasi input
-        if (empty($username) || empty($password)) {
-            throw new Exception('Username dan password wajib diisi.');
+            // Validasi input
+            if (empty($username) || empty($password)) {
+                throw new Exception('Username dan password wajib diisi.');
+            }
+
+            $user = Absensi_Model::verify_login($username, $password);
+
+            if (is_wp_error($user)) {
+                return $user;
+            }
+
+            return new WP_REST_Response([
+                'success' => true,
+                'message' => 'Login berhasil',
+                'user' => $user
+            ], 200);
+
+        } catch (Exception $e) {
+            return new WP_REST_Response([
+                'success' => false,
+                'message' => $e->getMessage()
+            ], 400);
         }
-
-        $user = Absensi_Model::verify_login($username, $password);
-
-        if (is_wp_error($user)) {
-            return $user;
-        }
-
-        return new WP_REST_Response([
-            'success' => true,
-            'message' => 'Login berhasil',
-            'user' => $user
-        ], 200);
-
-    } catch (Exception $e) {
-        return new WP_REST_Response([
-            'success' => false,
-            'message' => $e->getMessage()
-        ], 400);
     }
-}
 
-// Tambahkan di controller.php
+    // controller dipakai
+    public static function get_presensi_siswa(WP_REST_Request $request) {
+        try {
+            $user = self::get_current_user($request);
 
-/**
- * Get presensi history for siswa
- */
-public static function get_presensi_siswa(WP_REST_Request $request) {
-    try {
-        $user = self::get_current_user($request);
+            if (!$user) {
+                return new WP_Error('no_user_data', 'User data not found in request headers', ['status' => 400]);
+            }
+            
+            if (!$user || $user['role'] !== 'SISWA') {
+                throw new Exception('Akses ditolak. Hanya untuk siswa.');
+            }
+            
+            $bulan = $request->get_param('bulan') ?: date('m');
+            $tahun = $request->get_param('tahun') ?: date('Y');
 
-        if (!$user) {
-            return new WP_Error('no_user_data', 'User data not found in request headers', ['status' => 400]);
+            $data = Absensi_Model::get_presensi_siswa_model($user['id_siswa'], $bulan, $tahun);
+            
+            return new WP_REST_Response([
+                'success' => true,
+                'data' => $data,
+                'periode' => [
+                    'bulan' => intval($bulan),
+                    'tahun' => intval($tahun)
+                ]
+            ], 200);
+            
+        } catch (Exception $e) {
+            return new WP_REST_Response([
+                'success' => false,
+                'message' => $e->getMessage()
+            ], 400);
         }
-        
-        if (!$user || $user['role'] !== 'SISWA') {
-            throw new Exception('Akses ditolak. Hanya untuk siswa.');
-        }
-        
-        $bulan = $request->get_param('bulan') ?: date('m');
-        $tahun = $request->get_param('tahun') ?: date('Y');
-
-        $data = Absensi_Model::get_presensi_siswa_model($user['id_siswa'], $bulan, $tahun);
-        
-        return new WP_REST_Response([
-            'success' => true,
-            'data' => $data,
-            'periode' => [
-                'bulan' => intval($bulan),
-                'tahun' => intval($tahun)
-            ]
-        ], 200);
-        
-    } catch (Exception $e) {
-        return new WP_REST_Response([
-            'success' => false,
-            'message' => $e->getMessage()
-        ], 400);
     }
-}
 
 /**
  * Get rekap presensi kelas untuk guru
@@ -445,128 +407,94 @@ public static function get_rekap_presensi_kelas($request) {
     }
 }
 
-/**
- * Helper function to get current user from localStorage data
- * Note: Ini sederhana dulu, nanti bisa enhance dengan proper session/token
- */
-// private static function get_current_user() {
-//     // Untuk MVP, kita terima user data via headers
-//     // Nanti bisa enhance dengan proper authentication
-//     $user_data = isset($_SERVER['HTTP_X_USER_DATA']) ? $_SERVER['HTTP_X_USER_DATA'] : '';
-    
-//     if ($user_data) {
-//         return json_decode(stripslashes($user_data), true);
-//     }
-    
-//     return null;
-// }
-private static function get_current_user(WP_REST_Request $request) {
-    // Ambil header X-User-Data
-    $user_data_json = $request->get_header('X-User-Data');
+    // controller dipakai
+    private static function get_current_user(WP_REST_Request $request) {
+        // Ambil header X-User-Data
+        $user_data_json = $request->get_header('X-User-Data');
 
-    // Jika header tidak ada, kembalikan null
-    if (!$user_data_json) {
-        return null;
+        // Jika header tidak ada, kembalikan null
+        if (!$user_data_json) {
+            return null;
+        }
+
+        // Decode JSON menjadi array
+        $user_data = json_decode($user_data_json, true);
+
+        // Cek apakah JSON valid
+        if (json_last_error() !== JSON_ERROR_NONE) {
+            return null; // atau bisa lempar error
+        }
+
+        return $user_data;
     }
 
-    // Decode JSON menjadi array
-    $user_data = json_decode($user_data_json, true);
+    // controller dipakai
+    public static function get_rekap_presensi_kelas_detailed(WP_REST_Request $request) {
+        try {
+            $user = self::get_current_user($request);
 
-    // Cek apakah JSON valid
-    if (json_last_error() !== JSON_ERROR_NONE) {
-        return null; // atau bisa lempar error
+            if (!$user) {
+                return new WP_Error('no_user_data', 'User data not found in request headers', ['status' => 400]);
+            }
+            
+            if (!$user || $user['role'] !== 'GURU') {
+                throw new Exception('Akses ditolak. Hanya untuk guru.');
+            }
+            
+            $nama_kelas = $request->get_param('kelas');
+            $id_kelas = Absensi_Model::get_id_kelas_by_name($nama_kelas);
+            $bulan = $request->get_param('bulan') ?: date('m');
+            $tahun = $request->get_param('tahun') ?: date('Y');
+            $mapel = $request->get_param('mapel');
+
+            if (!$id_kelas) {
+                throw new Exception('Parameter kelas wajib diisi.');
+            }
+            if (!$bulan) {
+                throw new Exception('Parameter bulan wajib diisi.');
+            }
+            if (!$tahun) {
+                throw new Exception('Parameter tahun wajib diisi.');
+            }
+            if (!$mapel) {
+                throw new Exception('Parameter mapel wajib diisi.');
+            }
+
+            $data = Absensi_Model::get_rekap_presensi_kelas_detailed(
+                $id_kelas, $user['id_guru'], $bulan, $tahun, $mapel
+            );
+
+            if (is_wp_error($data)) {
+                return $data;
+            }
+
+            // Get additional info for response
+            $kelas_info = Absensi_Model::get_nama_kelas($id_kelas);
+            
+            $mapel_list = Absensi_Model::get_mata_pelajaran_guru($user['id_guru'], $id_kelas);
+
+            return new WP_REST_Response([
+                'success' => true,
+                'data' => $data,
+                'info' => [
+                    'kelas' => $kelas_info['nama_kelas'] ?? '',
+                    'bulan' => intval($bulan),
+                    'tahun' => intval($tahun),
+                    'mapel' => $mapel,
+                    'total_siswa' => count($data)
+                ],
+                'filters' => [
+                    'mapel_list' => array_column($mapel_list, 'mata_pelajaran')
+                ]
+            ], 200);
+            
+        } catch (Exception $e) {
+            return new WP_REST_Response([
+                'success' => false,
+                'message' => $e->getMessage()
+            ], 400);
+        }
     }
-
-    return $user_data;
-}
-
-
-
-// Tambahkan di controller.php
-
-/**
- * Get rekap presensi kelas detail untuk guru
- */
-public static function get_rekap_presensi_kelas_detailed(WP_REST_Request $request) {
-    try {
-        $user = self::get_current_user($request);
-
-        if (!$user) {
-            return new WP_Error('no_user_data', 'User data not found in request headers', ['status' => 400]);
-        }
-        
-        if (!$user || $user['role'] !== 'GURU') {
-            throw new Exception('Akses ditolak. Hanya untuk guru.');
-        }
-        
-        $nama_kelas = $request->get_param('kelas');
-        $id_kelas = Absensi_Model::get_id_kelas_by_name($nama_kelas);
-        $bulan = $request->get_param('bulan') ?: date('m');
-        $tahun = $request->get_param('tahun') ?: date('Y');
-        $mapel = $request->get_param('mapel');
-
-        if (!$id_kelas) {
-            throw new Exception('Parameter kelas wajib diisi.');
-        }
-        if (!$bulan) {
-            throw new Exception('Parameter bulan wajib diisi.');
-        }
-        if (!$tahun) {
-            throw new Exception('Parameter tahun wajib diisi.');
-        }
-        if (!$mapel) {
-            throw new Exception('Parameter mapel wajib diisi.');
-        }
-
-        $data = Absensi_Model::get_rekap_presensi_kelas_detailed(
-            $id_kelas, $user['id_guru'], $bulan, $tahun, $mapel
-        );
-
-        // return new WP_REST_Response([
-        //     'success' => true,
-        //     'data' => $data,
-        //     'message' => 'ini response coba-coba mapel list'
-        // ], 200);
-
-        
-
-        if (is_wp_error($data)) {
-            return $data;
-        }
-
-        // Get additional info for response
-        $kelas_info = Absensi_Model::get_nama_kelas($id_kelas);
-        
-        $mapel_list = Absensi_Model::get_mata_pelajaran_guru($user['id_guru'], $id_kelas);
-
-        // return new WP_REST_Response([
-        //     'success' => true,
-        //     'data' => $mapel_list,
-        //     'message' => 'ini response coba-coba mapel list'
-        // ], 200);
-        
-        return new WP_REST_Response([
-            'success' => true,
-            'data' => $data,
-            'info' => [
-                'kelas' => $kelas_info['nama_kelas'] ?? '',
-                'bulan' => intval($bulan),
-                'tahun' => intval($tahun),
-                'mapel' => $mapel,
-                'total_siswa' => count($data)
-            ],
-            'filters' => [
-                'mapel_list' => array_column($mapel_list, 'mata_pelajaran')
-            ]
-        ], 200);
-        
-    } catch (Exception $e) {
-        return new WP_REST_Response([
-            'success' => false,
-            'message' => $e->getMessage()
-        ], 400);
-    }
-}
 
 /**
  * Get kelas yang diajar guru
@@ -598,108 +526,104 @@ public static function get_kelas_guru($request) {
     }
 }
 
-public static function get_kelas_dan_mapel_guru(WP_REST_Request $request) {
-    try {
-        $user = self::get_current_user($request);
+    // controller dipakai
+    public static function get_kelas_dan_mapel_guru(WP_REST_Request $request) {
+        try {
+            $user = self::get_current_user($request);
 
-        if (!$user) {
-            return new WP_Error('no_user_data', 'User data not found in request headers', ['status' => 400]);
+            if (!$user) {
+                return new WP_Error('no_user_data', 'User data not found in request headers', ['status' => 400]);
+            }
+            
+            if (!$user || $user['role'] !== 'GURU') {
+                throw new Exception('Akses ditolak. Hanya untuk guru.');
+            }
+
+            $data = Absensi_Model::bubs_get_jadwal_by_guru_id($user['id_guru']);
+            
+            return new WP_REST_Response([
+                'success' => true,
+                'data' => $data
+            ], 200);
+            
+        } catch (Exception $e) {
+            return new WP_REST_Response([
+                'success' => false,
+                'message' => $e->getMessage()
+            ], 400);
         }
-        
-        if (!$user || $user['role'] !== 'GURU') {
-            throw new Exception('Akses ditolak. Hanya untuk guru.');
-        }
-
-        // return new WP_REST_Response([
-        //     'success' => true,
-        //     'data' => $user['id_guru']
-        // ], 200);
-
-        $data = Absensi_Model::bubs_get_jadwal_by_guru_id($user['id_guru']);
-        
-        return new WP_REST_Response([
-            'success' => true,
-            'data' => $data
-        ], 200);
-        
-    } catch (Exception $e) {
-        return new WP_REST_Response([
-            'success' => false,
-            'message' => $e->getMessage()
-        ], 400);
     }
-}
 
-/**
- * Export rekap presensi to Excel
- */
-public static function export_rekap_excel($request) {
-    try {
-        $user = self::get_current_user();
-        
-        if (!$user || $user['role'] !== 'GURU') {
-            throw new Exception('Akses ditolak. Hanya untuk guru.');
-        }
-        
-        $id_kelas = $request->get_param('kelas');
-        $bulan = $request->get_param('bulan') ?: date('m');
-        $tahun = $request->get_param('tahun') ?: date('Y');
-        $mapel = $request->get_param('mapel');
-        
-        if (!$id_kelas) {
-            throw new Exception('Parameter kelas wajib diisi.');
-        }
-        
-        $data = Absensi_Model::get_rekap_presensi_kelas_detailed(
-            $id_kelas, $user['id_guru'], $bulan, $tahun, $mapel
-        );
-        
-        if (is_wp_error($data)) {
-            return $data;
-        }
-        
-        // Generate Excel file
-        $filename = self::generate_excel_file($data, $bulan, $tahun, $mapel);
-        
-        return new WP_REST_Response([
-            'success' => true,
-            'file_url' => $filename,
-            'message' => 'File Excel berhasil di-generate'
-        ], 200);
-        
-    } catch (Exception $e) {
-        return new WP_REST_Response([
-            'success' => false,
-            'message' => $e->getMessage()
-        ], 400);
-    }
-}
+    // controller dipakai
+    public static function export_rekap_excel(WP_REST_Request $request) {
+        try {
+            $user = self::get_current_user($request);
 
-/**
- * Generate Excel file (simplified version)
- * Note: Untuk production, bisa pakai library seperti PhpSpreadsheet
- */
-private static function generate_excel_file($data, $bulan, $tahun, $mapel) {
-    $months = ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'];
-    $month_name = $months[$bulan - 1] ?? 'Unknown';
-    
-    // Create CSV content (simplified - untuk production pakai PhpSpreadsheet)
-    $csv_content = "Rekap Presensi - {$month_name} {$tahun}\n";
-    $csv_content .= "Mata Pelajaran: " . ($mapel ?: 'Semua Mapel') . "\n\n";
-    $csv_content .= "No,NIS,Nama Siswa,Hadir,Izin,Sakit,Alpa,Total,Presentase\n";
-    
-    $counter = 1;
-    foreach ($data as $row) {
-        $csv_content .= "{$counter},{$row['nik']},{$row['nama_lengkap']},{$row['hadir']},{$row['izin']},{$row['sakit']},{$row['alpa']},{$row['total_pertemuan']},{$row['presentase']}%\n";
-        $counter++;
+            if (!$user) {
+                return new WP_Error('no_user_data', 'User data not found in request headers', ['status' => 400]);
+            }
+            
+            if (!$user || $user['role'] !== 'GURU') {
+                throw new Exception('Akses ditolak. Hanya untuk guru.');
+            }
+            
+            $nama_kelas = $request->get_param('kelas');
+            $id_kelas = Absensi_Model::get_id_kelas_by_name($nama_kelas);
+            $bulan = $request->get_param('bulan') ?: date('m');
+            $tahun = $request->get_param('tahun') ?: date('Y');
+            $mapel = $request->get_param('mapel');
+
+            if (!$id_kelas) {
+                throw new Exception('Parameter kelas wajib diisi.');
+            }
+            
+            $data = Absensi_Model::get_rekap_presensi_kelas_detailed(
+                $id_kelas, $user['id_guru'], $bulan, $tahun, $mapel
+            );
+            
+            if (is_wp_error($data)) {
+                return $data;
+            }
+            
+            // Generate Excel file
+            $filename = self::generate_excel_file($data, $bulan, $tahun, $mapel);
+            
+            return new WP_REST_Response([
+                'success' => true,
+                'file_url' => $filename,
+                'message' => 'File Excel berhasil di-generate'
+            ], 200);
+            
+        } catch (Exception $e) {
+            return new WP_REST_Response([
+                'success' => false,
+                'message' => $e->getMessage()
+            ], 400);
+        }
     }
-    
-    // Save file temporarily
-    $filename = "rekap_presensi_{$bulan}_{$tahun}_" . time() . ".csv";
-    $filepath = WP_CONTENT_DIR . '/uploads/' . $filename;
-    
-    file_put_contents($filepath, $csv_content);
-    
-    return content_url('/uploads/' . $filename);
-}
+
+    // controller dipakai
+    private static function generate_excel_file($data, $bulan, $tahun, $mapel) {
+        $months = ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'];
+        $month_name = $months[$bulan - 1] ?? 'Unknown';
+        
+        // Create CSV content (simplified - untuk production pakai PhpSpreadsheet)
+        $csv_content = "Rekap Presensi - {$month_name} {$tahun}\n";
+        $csv_content .= "Mata Pelajaran: " . ($mapel ?: 'Semua Mapel') . "\n\n";
+        $csv_content .= "No,NIS,Nama Siswa,Hadir,Izin,Sakit,Alpa,Total,Presentase\n";
+        
+        $counter = 1;
+        foreach ($data as $row) {
+            $csv_content .= "{$counter},{$row['nik']},{$row['nama_lengkap']},{$row['hadir']},{$row['izin']},{$row['sakit']},{$row['alpa']},{$row['total_pertemuan']},{$row['presentase']}%\n";
+            $counter++;
+        }
+        
+        // Save file temporarily
+        $filename = "rekap_presensi_{$bulan}_{$tahun}_" . time() . ".csv";
+        $filepath = WP_CONTENT_DIR . '/uploads/' . $filename;
+        
+        file_put_contents($filepath, $csv_content);
+        
+        return content_url('/uploads/' . $filename);
+    }
 }

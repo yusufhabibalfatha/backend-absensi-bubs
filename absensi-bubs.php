@@ -1,43 +1,43 @@
 <?php
 /*
-Plugin Name: Absensi Bubs V1
-Plugin URI: https://example.com/absensi-bubs
+Plugin Name: Absensi Bubs V2
+Plugin URI: https://yusufhabib.site
 Description: Plugin untuk sistem absensi sekolah Bubs.
 Version: 1.1
-Author: Nama Anda
+Author: Yusuf Habib Alfatha, S.Kom., Gr
 License: GPL2
 */
 
 defined('ABSPATH') || exit;
 
+require_once plugin_dir_path(__FILE__) . 'install-tables.php';
 require_once plugin_dir_path(__FILE__) . 'model.php';
 require_once plugin_dir_path(__FILE__) . 'controller.php';
-
-// TAMBAHKAN INI - FITUR TUGAS & MATERI
 require_once plugin_dir_path(__FILE__) . 'tugas-endpoints.php';
 require_once plugin_dir_path(__FILE__) . 'materi-endpoints.php';
 require_once plugin_dir_path(__FILE__) . 'submission-endpoints.php';
 
-// API
-// GET /wp-json/absensi-bubs/v1/
-// GET /wp-json/absensi-bubs/v1/jadwal-siswa?kelas=Kelas 7&hari=Sabtu&mapel=Informatika
-// GET /wp-json/absensi-bubs/v1/mata-pelajaran?kelas=10 IPA 1&hari=Senin
-// GET /wp-json/absensi-bubs/v1/jenis-kegiatan
-// GET /wp-json/absensi-bubs/v1/kelas-boarding
-// GET /wp-json/absensi-bubs/v1/kamar
-// GET /wp-json/absensi-bubs/v1/siswa-kegiatan?kegiatan=1&kelas=5
-// GET /wp-json/absensi-bubs/v1/siswa-kegiatan?kegiatan=3&kamar=2
-// POST /wp-json/absensi-bubs/v1/insert/absensi-kegiatan
 
 add_action('rest_api_init', function () {
-    // Endpoint utama
+    /**
+     * ? API ini tidak digunakan di Frontend
+     * TODO: API bisa dihapus saja
+     * */ 
     register_rest_route('absensi-bubs/v1', '/', [
         'methods' => 'GET',
         'callback' => ['Absensi_Controller', 'handle_request'],
         'permission_callback' => '__return_true',
     ]);
 
-    // Endpoint untuk mendapatkan jadwal dan data siswa
+
+    /**
+     * ? API untuk mengambil data kelas siswa yang akan diabsen berdasarkan params
+     * * Fungsi Handle API ada didalam file controller.php
+     * @param kelas nama kelas diambil dari data jadwal.js
+     * @param hari nama hari diambil dari variable
+     * @param mapel nama mapel diambil dari data jadwal.js
+     * TODO: Refactor fungsi controller ke file baru
+     * */ 
     register_rest_route('absensi-bubs/v1', '/jadwal-siswa', [
         'methods' => 'GET',
         'callback' => ['Absensi_Controller', 'get_jadwal_siswa_by_kriteria'],
@@ -65,54 +65,55 @@ add_action('rest_api_init', function () {
         ]
     ]);
 
-    // Endpoint untuk mendapatkan mata pelajaran berdasarkan kelas dan hari
-    register_rest_route('absensi-bubs/v1', '/mata-pelajaran', [
-        'methods' => 'GET',
-        'callback' => ['Absensi_Controller', 'get_mata_pelajaran_by_kelas_hari'],
-        'permission_callback' => '__return_true',
-        'args' => [
-            'kelas' => [
-                'required' => true,
-                'validate_callback' => function($param) {
-                    return !empty($param);
-                }
-            ],
-            'hari' => [
-                'required' => true,
-                'validate_callback' => function($param) {
-                    $valid_hari = ['Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu'];
-                    return in_array($param, $valid_hari);
-                }
-            ]
-        ]
-    ]);
 
     // =============================================
-    // ENDPOINT BARU UNTUK ABSENSI KEGIATAN
+    // API UNTUK ABSENSI KEGIATAN
     // =============================================
 
-    // Get semua jenis kegiatan
+    /**
+     * ? API untuk mengambil data jenis kegiatan yang ada
+     * * Fungsi Handle API ada didalam file controller.php
+     * TODO: Refactor fungsi controller ke file baru
+     * */ 
     register_rest_route('absensi-bubs/v1', '/jenis-kegiatan', [
         'methods' => 'GET',
         'callback' => ['Absensi_Controller', 'get_jenis_kegiatan'],
         'permission_callback' => '__return_true',
     ]);
 
-    // Get kelas boarding
+
+    /**
+     * ? API untuk mengambil data kelas-kelas di boarding
+     * * Fungsi Handle API ada didalam file controller.php
+     * TODO: Refactor fungsi controller ke file baru
+     * */ 
     register_rest_route('absensi-bubs/v1', '/kelas-boarding', [
         'methods' => 'GET',
         'callback' => ['Absensi_Controller', 'get_kelas_boarding'],
         'permission_callback' => '__return_true',
     ]);
 
-    // Get semua kamar
+
+    /**
+     * ? API untuk mengambil data kamar-kamar di pondok
+     * * Fungsi Handle API ada didalam file controller.php
+     * TODO: Refactor fungsi controller ke file baru
+     * */ 
     register_rest_route('absensi-bubs/v1', '/kamar', [
         'methods' => 'GET',
         'callback' => ['Absensi_Controller', 'get_kamar'],
         'permission_callback' => '__return_true',
     ]);
 
-    // Get siswa untuk kegiatan
+
+    /**
+     * ? API untuk mengambil data yang ingin diabsen yaitu siswa atau reguler
+     * * Fungsi Handle API ada didalam file controller.php
+     * @param kegiatan.id 
+     * @param kelas.id jika yang diabsen adalah kegiatan boarding
+     * @param kamar.id jika yang diabsen adalah kegiatan pondok
+     * TODO: Refactor fungsi controller ke file baru
+     * */
     register_rest_route('absensi-bubs/v1', '/siswa-kegiatan', [
         'methods' => 'GET',
         'callback' => ['Absensi_Controller', 'get_siswa_kegiatan'],
@@ -139,7 +140,13 @@ add_action('rest_api_init', function () {
         ]
     ]);
 
-    // Insert absensi sekolah
+
+    /**
+     * ? API untuk memasukkan data absen mapel
+     * * Fungsi Handle API ada didalam file controller.php
+     * @param formData data keterangan absen setiap siswa
+     * TODO: Refactor fungsi controller ke file baru
+     * */
     register_rest_route('absensi-bubs/insert', 'absensi-sekolah', [
         'methods' => 'POST',
         'callback' => ['Absensi_Controller', 'insert_absensi_sekolah'],
@@ -147,7 +154,13 @@ add_action('rest_api_init', function () {
         'args' => []
     ]);
 
-    // Insert absensi kegiatan
+
+    /**
+     * ? API untuk memasukkan data absen kegiatan
+     * * Fungsi Handle API ada didalam file controller.php
+     * @param submissionData data keterangan absen setiap siswa
+     * TODO: Refactor fungsi controller ke file baru
+     * */
     register_rest_route('absensi-bubs/insert', 'absensi-kegiatan', [
         'methods' => 'POST',
         'callback' => ['Absensi_Controller', 'insert_absensi_kegiatan'],
@@ -155,147 +168,151 @@ add_action('rest_api_init', function () {
         'args' => []
     ]);
 
-    // Tambahkan di rest_api_init
+
+    /**
+     * ? API untuk login
+     * * Fungsi Handle API ada didalam file controller.php
+     * @param formData data username dan password
+     * TODO: Refactor fungsi controller ke file baru
+     * */
     register_rest_route('absensi-bubs/v1', '/login', [
         'methods' => 'POST',
         'callback' => ['Absensi_Controller', 'login_user'],
         'permission_callback' => '__return_true',
     ]);
 
-    // Presensi siswa
+
+    /**
+     * ? API untuk rekap presensi di dashboard siswa
+     * * Fungsi Handle API ada didalam file controller.php
+     * @param selectedMonth
+     * @param selectedYear
+     * TODO: Refactor fungsi controller ke file baru
+     * */
     register_rest_route('absensi-bubs/v1', '/presensi-siswa', [
         'methods' => 'GET',
         'callback' => ['Absensi_Controller', 'get_presensi_siswa'],
         'permission_callback' => '__return_true',
     ]);
 
-    // Rekap presensi kelas untuk guru
-    register_rest_route('absensi-bubs/v1', '/rekap-presensi-kelas', [
-        'methods' => 'GET',
-        'callback' => ['Absensi_Controller', 'get_rekap_presensi_kelas'],
-        'permission_callback' => '__return_true',
-    ]);
-
-    // Tambahkan di rest_api_init
-
-    // Rekap presensi detail untuk guru
+    /**
+     * ? API untuk rekap presensi di dashboard guru
+     * * Fungsi Handle API ada didalam file controller.php
+     * @param selectedKelas
+     * @param selectedMonth
+     * @param selectedYear
+     * @param selectedMapel
+     * TODO: Refactor fungsi controller ke file baru
+     * */
     register_rest_route('absensi-bubs/v1', '/rekap-presensi-kelas-detailed', [
         'methods' => 'GET',
         'callback' => ['Absensi_Controller', 'get_rekap_presensi_kelas_detailed'],
         'permission_callback' => '__return_true',
     ]);
 
-    // Kelas yang diajar guru
+
+    /**
+     * ? API untuk ambil data kelas-kelas yang diajar guru
+     * * Fungsi Handle API ada didalam file controller.php
+     * @param id_guru
+     * TODO: Refactor fungsi controller ke file baru
+     * */
     register_rest_route('absensi-bubs/v1', '/kelas-guru', [
         'methods' => 'GET',
         'callback' => ['Absensi_Controller', 'get_kelas_dan_mapel_guru'],
         'permission_callback' => '__return_true',
     ]);
 
-    // Export to Excel
+    /**
+     * ? API untuk export rekap absen didashboard guru
+     * * Fungsi Handle API ada didalam file controller.php
+     * ! Hasil export excel masih berantakan
+     * @param selectedKelas
+     * @param selectedMonth
+     * @param selectedYear
+     * @param selectedMapel
+     * TODO: Refactor fungsi controller ke file baru
+     * */
     register_rest_route('absensi-bubs/v1', '/export-rekap-excel', [
         'methods' => 'GET',
         'callback' => ['Absensi_Controller', 'export_rekap_excel'],
         'permission_callback' => '__return_true',
     ]);
 
+
+    /**
+     * ? API untuk upload/insert materi baru dari dashboard guru
+     * @param submitData berisi data id_guru, judul_materi, deskripsi, id_mata_pelajaran, dan file
+     * */
     register_rest_route('bubs/v1', '/materi/upload', array(
         'methods' => 'POST',
         'callback' => 'bubs_upload_materi',
         'permission_callback' => '__return_true',
     ));
 
+
+    /**
+     * ? API untuk upload/insert tugas baru dari dashboard guru
+     * @param submitData berisi data id_guru, judul_tugas, deskripsi, id_mata_pelajaran, deadline_datetime, bobot_nilai, dan file
+     * */
     register_rest_route('bubs/v1', '/tugas/create', array(
         'methods' => 'POST',
         'callback' => 'bubs_create_tugas',
         'permission_callback' => '__return_true',
     ));
 
+
+    /**
+     * ? API untuk upload/insert hasil pengerjaan tugas siswa
+     * @param submitData berisi data id_tugas, id_siswa, jawaban_text, dan file
+     * */
     register_rest_route('bubs/v1', '/submission/create', array(
         'methods' => 'POST',
         'callback' => 'bubs_create_submission',
         'permission_callback' => '__return_true',
     ));
 
+
+    /**
+     * ? API untuk ambil list data hasil pengerjaan tugas siswa
+     * @param id_tugas diambil dari tugas yang diklik oleh guru
+     * */
     register_rest_route('bubs/v1', '/submission/tugas/(?P<id_tugas>\d+)', array(
         'methods' => 'GET',
-        'callback' => 'bubs_get_submission_by_tugas', // tidak ada
+        'callback' => 'bubs_get_submission_by_tugas',
         'permission_callback' => '__return_true',
     ));
 
+
+    /**
+     * ? API untuk ambil data detail dari tugas
+     * @param id_guru 
+     * */
     register_rest_route('bubs/v1', '/tugas/guru/(?P<id_guru>\d+)', array(
         'methods' => 'GET',
         'callback' => 'bubs_get_tugas_by_guru',
         'permission_callback' => '__return_true',
     ));
 
-    // BERI NILAI
+
+    /**
+     * ? API untuk memberikan nilai kepada submission pada setiap siswa
+     * @param id_submission 
+     * @param id_guru 
+     * @param nilai 
+     * @param catatan_guru 
+     * */
     register_rest_route('absensi-bubs/v1', '/nilai/beri', array(
         'methods' => 'POST',
         'callback' => 'bubs_beri_nilai',
         'permission_callback' => '__return_true',
     ));
 
-
-    // =============================================
-    // ENDPOINT BARU UNTUK TUGAS & MATERI SYSTEM
-    // =============================================
-
-    // TUGAS ENDPOINTS
-    // register_rest_route('absensi-bubs/v1', '/tugas/create', [
-    //     'methods' => 'POST',
-    //     'callback' => 'bubs_create_tugas',
-    //     'permission_callback' => '__return_true',
-    // ]);
-
-    // register_rest_route('absensi-bubs/v1', '/tugas/guru/(?P<id_guru>\d+)', [
-    //     'methods' => 'GET',
-    //     'callback' => 'bubs_get_tugas_by_guru',
-    //     'permission_callback' => '__return_true',
-    // ]);
-
-    // register_rest_route('absensi-bubs/v1', '/tugas/siswa/(?P<id_siswa>\d+)', [
-    //     'methods' => 'GET',
-    //     'callback' => 'bubs_get_tugas_for_siswa',
-    //     'permission_callback' => '__return_true',
-    // ]);
-
-    // // MATERI ENDPOINTS
-    // register_rest_route('absensi-bubs/v1', '/materi/upload', [
-    //     'methods' => 'POST',
-    //     'callback' => 'bubs_upload_materi',
-    //     'permission_callback' => '__return_true',
-    // ]);
-
-    // register_rest_route('absensi-bubs/v1', '/materi/guru/(?P<id_guru>\d+)', [
-    //     'methods' => 'GET',
-    //     'callback' => 'bubs_get_materi_by_guru',
-    //     'permission_callback' => '__return_true',
-    // ]);
-
-    // register_rest_route('absensi-bubs/v1', '/materi/siswa/(?P<id_kelas>\d+)', [
-    //     'methods' => 'GET',
-    //     'callback' => 'bubs_get_materi_for_siswa',
-    //     'permission_callback' => '__return_true',
-    // ]);
-
-    // // SUBMISSION ENDPOINTS
-    // register_rest_route('absensi-bubs/v1', '/submission/create', [
-    //     'methods' => 'POST',
-    //     'callback' => 'bubs_create_submission',
-    //     'permission_callback' => '__return_true',
-    // ]);
-
-    // register_rest_route('absensi-bubs/v1', '/submission/tugas/(?P<id_tugas>\d+)', [
-    //     'methods' => 'GET',
-    //     'callback' => 'bubs_get_submission_by_tugas',
-    //     'permission_callback' => '__return_true',
-    // ]);
 });
 
 
 add_action('init', function() {
-    header("Access-Control-Allow-Origin: http://localhost:5173");
+    header("Access-Control-Allow-Origin: https://bubs.sdit.web.id");
     header("Access-Control-Allow-Methods: GET, POST, OPTIONS, PUT, DELETE");
     header("Access-Control-Allow-Headers: Authorization, Content-Type, X-User-Data");
 

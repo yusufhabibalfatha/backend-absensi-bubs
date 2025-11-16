@@ -1,23 +1,6 @@
 <?php
-// SUBMISSION ENDPOINTS
-add_action('rest_api_init', function () {
-    // CREATE SUBMISSION
-    // register_rest_route('bubs/v1', '/submission/create', array(
-    //     'methods' => 'POST',
-    //     'callback' => 'bubs_create_submission',
-    //     'permission_callback' => '__return_true',
-    // ));
 
-    // GET SUBMISSION BY TUGAS
-    // register_rest_route('bubs/v1', '/submission/tugas/(?P<id_tugas>\d+)', array(
-    //     'methods' => 'GET',
-    //     'callback' => 'bubs_get_submission_by_tugas', // tidak ada
-    //     'permission_callback' => '__return_true',
-    // ));
-});
-
-// GET SUBMISSION BY TUGAS
-function bubs_get_submission_by_tugas($request) {
+function bubs_get_submission_by_tugas(WP_REST_Request $request) {
     global $wpdb;
     
     $id_tugas = $request['id_tugas'];
@@ -36,16 +19,12 @@ function bubs_get_submission_by_tugas($request) {
         WHERE s.id_tugas = %d
         ORDER BY s.submitted_at DESC
     ", $id_tugas));
-    
-    // return new WP_REST_Response([
-    //     'success' => true,
-    //     "data" => $submissions
-    // ], 200);
 
     return rest_ensure_response($submissions);
 }
-// CREATE SUBMISSION
-function bubs_create_submission( $request) {
+
+
+function bubs_create_submission(WP_REST_Request $request) {
     global $wpdb;
     
     $id_tugas = $request['id_tugas'];
@@ -135,7 +114,6 @@ function bubs_create_submission( $request) {
     }
 }
 
-// BERI NILAI
 function bubs_beri_nilai(WP_REST_Request $request) {
     global $wpdb;
     
@@ -143,11 +121,6 @@ function bubs_beri_nilai(WP_REST_Request $request) {
     $id_guru = $request['id_guru'];
     $nilai = intval($request['nilai']);
     $catatan_guru = sanitize_textarea_field($request['catatan_guru']);
-
-    // return new WP_REST_Response([
-    //     'success' => true,
-    //     "data" => $id_submission
-    // ], 200);
     
     // Cek apakah sudah ada nilai
     $existing_nilai = $wpdb->get_var($wpdb->prepare("

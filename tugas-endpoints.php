@@ -1,21 +1,6 @@
 <?php
 // TUGAS ENDPOINTS
 add_action('rest_api_init', function () {
-    // CREATE TUGAS
-    // register_rest_route('bubs/v1', '/tugas/create', array(
-    //     'methods' => 'POST',
-    //     'callback' => 'bubs_create_tugas',
-    //     'permission_callback' => '__return_true',
-    // ));
-
-    // GET TUGAS BY GURU
-    // register_rest_route('bubs/v1', '/tugas/guru/(?P<id_guru>\d+)', array(
-    //     'methods' => 'GET',
-    //     'callback' => 'bubs_get_tugas_by_guru',
-    //     'permission_callback' => '__return_true',
-    // ));
-
-    // GET TUGAS FOR SISWA
     register_rest_route('bubs/v1', '/tugas/siswa/(?P<id_siswa>\d+)', array(
         'methods' => 'GET',
         'callback' => 'bubs_get_tugas_for_siswa',
@@ -23,18 +8,23 @@ add_action('rest_api_init', function () {
     ));
 });
 
-// CREATE TUGAS
 function bubs_create_tugas(WP_REST_Request $request) {
     global $wpdb;
     
     $id_guru = $request['id_guru'];
-    $id_mata_pelajaran = $request['id_mata_pelajaran'];
+    $nama_mapel_dan_nama_kelas = $request['id_mata_pelajaran'];
     $judul_tugas = sanitize_text_field($request['judul_tugas']);
     $deskripsi_text = sanitize_textarea_field($request['deskripsi_text']);
     $deadline_datetime = sanitize_text_field($request['deadline_datetime']);
     $bobot_nilai = intval($request['bobot_nilai']);
 
-    // Ambil file yang dikirim (FormData)
+    $parts = explode(' - ', $nama_mapel_dan_nama_kelas);
+    $id_mapels = $wpdb->get_results($wpdb->prepare("select j.id
+            from bubs_jadwal as j
+            join bubs_kelas as k on j.id_kelas = k.id
+        where j.mata_pelajaran = %s AND k.nama_kelas = %s", $parts[0], $parts[1]));
+
+        // Ambil file yang dikirim (FormData)
     $files = $request->get_file_params();
 
     if (empty($files['file_tugas'])) {
@@ -42,17 +32,7 @@ function bubs_create_tugas(WP_REST_Request $request) {
     }
 
     $file = $files['file_tugas'];
-    
-    // Handle file upload jika ada
-    // $file_path = '';
-    // if (!empty($_FILES['file_tugas'])) {
-    //     $upload = wp_handle_upload($_FILES['file_tugas'], array('test_form' => false));
-    //     if (isset($upload['file'])) {
-    //         $file_path = $upload['file'];
-    //     }
-    // }
 
-    // Gunakan fungsi media upload WordPress
     require_once(ABSPATH . 'wp-admin/includes/file.php');
     require_once(ABSPATH . 'wp-admin/includes/media.php');
     require_once(ABSPATH . 'wp-admin/includes/image.php');
@@ -75,7 +55,7 @@ function bubs_create_tugas(WP_REST_Request $request) {
         'bubs_tugas',
         array(
             'id_guru' => $id_guru,
-            'id_mata_pelajaran' => $id_mata_pelajaran,
+            'id_mata_pelajaran' => $id_mapels[0]->id,
             'judul_tugas' => $judul_tugas,
             'deskripsi_text' => $deskripsi_text,
             'file_path' => $file_path,
@@ -101,7 +81,6 @@ function bubs_create_tugas(WP_REST_Request $request) {
     }
 }
 
-// GET TUGAS BY GURU
 function bubs_get_tugas_by_guru(WP_REST_Request $request) {
     global $wpdb;
     
@@ -116,11 +95,6 @@ function bubs_get_tugas_by_guru(WP_REST_Request $request) {
     ", $id_guru);
 
     $tugas = $wpdb->get_results($query);
-
-    // return new WP_REST_Response([
-    //     'success' => true,
-    //     "data" => $tugas
-    // ], 200);
     
     return rest_ensure_response($tugas);
 }

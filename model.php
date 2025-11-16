@@ -1,7 +1,7 @@
 <?php
 
 class Absensi_Model {
-
+    // model dipakai
     public static function get_jadwal_siswa_by_kriteria($nama_kelas, $hari, $mata_pelajaran) {
         global $wpdb;
 
@@ -44,10 +44,10 @@ class Absensi_Model {
             );
         }
 
-
         return $results;
     }
 
+    // model dipakai
     public static function get_guru_jadwal_siswa_by_kriteria($nama_kelas, $hari, $mata_pelajaran) {
         global $wpdb;
 
@@ -81,39 +81,10 @@ class Absensi_Model {
             );
         }
 
-
         return $results;
     }
 
-    public static function get_hari_available() {
-        return ['Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu'];
-    }
-
-    public static function get_mata_pelajaran_by_kelas_hari($nama_kelas, $hari) {
-        global $wpdb;
-
-        $jadwal_table = 'bubs_jadwal';
-        $kelas_table = 'bubs_kelas';
-
-        $query = $wpdb->prepare("
-            SELECT DISTINCT 
-                j.mata_pelajaran
-            FROM 
-                {$jadwal_table} j
-            INNER JOIN 
-                {$kelas_table} k ON j.id_kelas = k.id
-            WHERE 
-                k.nama_kelas = %s AND
-                j.hari = %s
-            ORDER BY 
-                j.mata_pelajaran ASC
-        ", $nama_kelas, $hari);
-
-        $results = $wpdb->get_results($query, ARRAY_A);
-
-        return $results;
-    }
-
+    // model dipakai
     public static function insert_absensi_sekolah($data) {
         global $wpdb;
         $prefix = 'bubs_';
@@ -160,14 +131,7 @@ class Absensi_Model {
         ], 200);
     }
 
-
-     // =============================================
-    // FUNGSI BARU UNTUK ABSENSI KEGIATAN
-    // =============================================
-
-    /**
-     * Get semua jenis kegiatan
-     */
+    // model dipakai
     public static function get_jenis_kegiatan() {
         global $wpdb;
         $table = 'bubs_jenis_kegiatan';
@@ -176,9 +140,7 @@ class Absensi_Model {
         return $wpdb->get_results($query, ARRAY_A);
     }
 
-    /**
-     * Get kelas yang memiliki siswa boarding
-     */
+    // model dipakai
     public static function get_kelas_boarding() {
         global $wpdb;
         $kelas_table = 'bubs_kelas';
@@ -201,9 +163,7 @@ class Absensi_Model {
         return $wpdb->get_results($query, ARRAY_A);
     }
 
-    /**
-     * Get semua kamar
-     */
+    // model dipakai
     public static function get_kamar() {
         global $wpdb;
         $table = 'bubs_kamar';
@@ -212,16 +172,13 @@ class Absensi_Model {
         return $wpdb->get_results($query, ARRAY_A);
     }
 
-    /**
-     * Get siswa untuk kegiatan SEKOLAH (berdasarkan kelas)
-     */
+    // model dipakai
     public static function get_siswa_kegiatan_sekolah($id_kelas, $id_kegiatan) {
         global $wpdb;
         $siswa_table = 'bubs_siswa';
         $kelas_table = 'bubs_kelas';
         $kegiatan_table = 'bubs_jenis_kegiatan';
 
-        // Validasi kegiatan sekolah
         $kegiatan = $wpdb->get_row($wpdb->prepare(
             "SELECT * FROM {$kegiatan_table} WHERE id = %d AND kategori = 'SEKOLAH'",
             $id_kegiatan
@@ -262,16 +219,13 @@ class Absensi_Model {
         return $results;
     }
 
-    /**
-     * Get siswa untuk kegiatan PONDOK (berdasarkan kamar)
-     */
+    // model dipakai
     public static function get_siswa_kegiatan_pondok($id_kamar, $id_kegiatan) {
         global $wpdb;
         $siswa_table = 'bubs_siswa';
         $kamar_table = 'bubs_kamar';
         $kegiatan_table = 'bubs_jenis_kegiatan';
 
-        // Validasi kegiatan pondok
         $kegiatan = $wpdb->get_row($wpdb->prepare(
             "SELECT * FROM {$kegiatan_table} WHERE id = %d AND kategori = 'PONDOK'",
             $id_kegiatan
@@ -313,9 +267,7 @@ class Absensi_Model {
         return $results;
     }
 
-    /**
-     * Insert absensi kegiatan
-     */
+    // model dipakai
     public static function insert_absensi_kegiatan($data) {
         global $wpdb;
         $prefix = 'bubs_';
@@ -370,139 +322,127 @@ class Absensi_Model {
         ];
     }
 
-// Tambahkan di model.php (setelah fungsi yang sudah ada)
+    // model dipakai
+    public static function verify_login($username, $password) {
+        global $wpdb;
+        $users_table = 'bubs_users';
 
-/**
- * Verify user login
- */
-public static function verify_login($username, $password) {
-    global $wpdb;
-    $users_table = 'bubs_users';
+        // Cari user by username
+        $user = $wpdb->get_row($wpdb->prepare(
+            "SELECT username, role, id_siswa, id_guru FROM {$users_table} WHERE username = %s", 
+            $username
+        ), ARRAY_A);
 
-    // Cari user by username
-    $user = $wpdb->get_row($wpdb->prepare(
-        "SELECT username, role, id_siswa, id_guru FROM {$users_table} WHERE username = %s", 
-        $username
-    ), ARRAY_A);
+        if (!$user) {
+            return new WP_Error('user_not_found', 'Username tidak ditemukan.');
+        }
 
-    if (!$user) {
-        return new WP_Error('user_not_found', 'Username tidak ditemukan.');
+        // Verify password
+        // if (password_verify($password, $user['password'])) {
+        //     return new WP_Error('invalid_password', 'Password salah.');
+        // }
+        // if ($password === $user['password']) {
+        //     return new WP_Error('invalid_password', 'Password salah.');
+        // }
+        
+        // Get additional user data based on role
+        if ($user['role'] === 'SISWA') {
+            $siswa_data = $wpdb->get_row($wpdb->prepare(
+                "SELECT s.nama_lengkap, k.nama_kelas, k.id as id_kelas 
+                FROM bubs_siswa s 
+                LEFT JOIN bubs_kelas k ON s.id_kelas = k.id 
+                WHERE s.id = %d", 
+                $user['id_siswa']
+            ), ARRAY_A);
+            
+            $user['nama_lengkap'] = $siswa_data['nama_lengkap'] ?? '';
+            $user['kelas'] = $siswa_data['nama_kelas'] ?? '';
+            $user['id_kelas'] = $siswa_data['id_kelas'];
+            
+        } elseif ($user['role'] === 'GURU') {
+            $guru_data = $wpdb->get_row($wpdb->prepare(
+                "SELECT nama FROM bubs_guru WHERE id = %d", 
+                $user['id_guru']
+            ), ARRAY_A);
+            
+            $user['nama_lengkap'] = $guru_data['nama'] ?? '';
+        }
+
+        // Remove password from response
+        unset($user['password']);
+
+        return $user;
     }
 
-    // Verify password
-    // if (password_verify($password, $user['password'])) {
-    //     return new WP_Error('invalid_password', 'Password salah.');
-    // }
-    // if ($password === $user['password']) {
-    //     return new WP_Error('invalid_password', 'Password salah.');
-    // }
-    
-    // Get additional user data based on role
-    if ($user['role'] === 'SISWA') {
-        $siswa_data = $wpdb->get_row($wpdb->prepare(
-            "SELECT s.nama_lengkap, k.nama_kelas, k.id as id_kelas 
-             FROM bubs_siswa s 
-             LEFT JOIN bubs_kelas k ON s.id_kelas = k.id 
-             WHERE s.id = %d", 
-            $user['id_siswa']
-        ), ARRAY_A);
+    // model dipakai
+    public static function get_presensi_siswa_model($id_siswa, $bulan, $tahun) {
+        global $wpdb;
         
-        $user['nama_lengkap'] = $siswa_data['nama_lengkap'] ?? '';
-        $user['kelas'] = $siswa_data['nama_kelas'] ?? '';
-        $user['id_kelas'] = $siswa_data['id_kelas'];
+        // Default to current month/year if not specified
+        if (!$bulan) $bulan = date('m');
+        if (!$tahun) $tahun = date('Y');
         
-    } elseif ($user['role'] === 'GURU') {
-        $guru_data = $wpdb->get_row($wpdb->prepare(
-            "SELECT nama FROM bubs_guru WHERE id = %d", 
-            $user['id_guru']
-        ), ARRAY_A);
+        $presensi_sekolah = self::get_presensi_sekolah_siswa($id_siswa, $bulan, $tahun);
+        $presensi_kegiatan = self::get_presensi_kegiatan_siswa($id_siswa, $bulan, $tahun);
         
-        $user['nama_lengkap'] = $guru_data['nama'] ?? '';
+        return [
+            'presensi_sekolah' => $presensi_sekolah,
+            'presensi_kegiatan' => $presensi_kegiatan,
+            'statistik' => self::get_statistik_presensi_siswa($id_siswa, $bulan, $tahun)
+        ];
     }
 
-    // Remove password from response
-    unset($user['password']);
+    // model dipakai
+    private static function get_presensi_sekolah_siswa($id_siswa, $bulan, $tahun) {
+        global $wpdb;
+        
+        $query = $wpdb->prepare("
+            SELECT 
+                a.tanggal,
+                a.status,
+                a.keterangan,
+                j.mata_pelajaran,
+                j.hari,
+                k.nama_kelas,
+                g.nama as nama_guru
+            FROM bubs_absensi_sekolah a
+            INNER JOIN bubs_jadwal j ON a.id_jadwal = j.id
+            INNER JOIN bubs_kelas k ON j.id_kelas = k.id
+            INNER JOIN bubs_guru g ON j.id_guru = g.id
+            WHERE a.id_siswa = %d
+            AND MONTH(a.tanggal) = %d
+            AND YEAR(a.tanggal) = %d
+            ORDER BY a.tanggal DESC
+        ", $id_siswa, $bulan, $tahun);
+        
+        return $wpdb->get_results($query, ARRAY_A);
+    }
 
-    return $user;
-}
-
-// Tambahkan di model.php
-
-/**
- * Get presensi history for siswa
- */
-public static function get_presensi_siswa_model($id_siswa, $bulan, $tahun) {
-    global $wpdb;
-    
-    // Default to current month/year if not specified
-    if (!$bulan) $bulan = date('m');
-    if (!$tahun) $tahun = date('Y');
-    
-    $presensi_sekolah = self::get_presensi_sekolah_siswa($id_siswa, $bulan, $tahun);
-    $presensi_kegiatan = self::get_presensi_kegiatan_siswa($id_siswa, $bulan, $tahun);
-    
-    return [
-        'presensi_sekolah' => $presensi_sekolah,
-        'presensi_kegiatan' => $presensi_kegiatan,
-        'statistik' => self::get_statistik_presensi_siswa($id_siswa, $bulan, $tahun)
-    ];
-}
-
-/**
- * Get presensi sekolah for siswa
- */
-private static function get_presensi_sekolah_siswa($id_siswa, $bulan, $tahun) {
-    global $wpdb;
-    
-    $query = $wpdb->prepare("
-        SELECT 
-            a.tanggal,
-            a.status,
-            a.keterangan,
-            j.mata_pelajaran,
-            j.hari,
-            k.nama_kelas,
-            g.nama as nama_guru
-        FROM bubs_absensi_sekolah a
-        INNER JOIN bubs_jadwal j ON a.id_jadwal = j.id
-        INNER JOIN bubs_kelas k ON j.id_kelas = k.id
-        INNER JOIN bubs_guru g ON j.id_guru = g.id
-        WHERE a.id_siswa = %d
-        AND MONTH(a.tanggal) = %d
-        AND YEAR(a.tanggal) = %d
-        ORDER BY a.tanggal DESC
-    ", $id_siswa, $bulan, $tahun);
-    
-    return $wpdb->get_results($query, ARRAY_A);
-}
-
-/**
- * Get presensi kegiatan for siswa
- */
-private static function get_presensi_kegiatan_siswa($id_siswa, $bulan, $tahun) {
-    global $wpdb;
-    
-    $query = $wpdb->prepare("
-        SELECT 
-            a.tanggal,
-            a.status,
-            a.keterangan,
-            k.nama_kegiatan,
-            k.kategori,
-            kl.nama_kelas,
-            km.nama_kamar
-        FROM bubs_absensi_kegiatan a
-        INNER JOIN bubs_jenis_kegiatan k ON a.id_kegiatan = k.id
-        LEFT JOIN bubs_kelas kl ON a.id_kelas = kl.id
-        LEFT JOIN bubs_kamar km ON a.id_kamar = km.id
-        WHERE a.id_siswa = %d
-        AND MONTH(a.tanggal) = %d
-        AND YEAR(a.tanggal) = %d
-        ORDER BY a.tanggal DESC
-    ", $id_siswa, $bulan, $tahun);
-    
-    return $wpdb->get_results($query, ARRAY_A);
-}
+    // model dipakai
+    private static function get_presensi_kegiatan_siswa($id_siswa, $bulan, $tahun) {
+        global $wpdb;
+        
+        $query = $wpdb->prepare("
+            SELECT 
+                a.tanggal,
+                a.status,
+                a.keterangan,
+                k.nama_kegiatan,
+                k.kategori,
+                kl.nama_kelas,
+                km.nama_kamar
+            FROM bubs_absensi_kegiatan a
+            INNER JOIN bubs_jenis_kegiatan k ON a.id_kegiatan = k.id
+            LEFT JOIN bubs_kelas kl ON a.id_kelas = kl.id
+            LEFT JOIN bubs_kamar km ON a.id_kamar = km.id
+            WHERE a.id_siswa = %d
+            AND MONTH(a.tanggal) = %d
+            AND YEAR(a.tanggal) = %d
+            ORDER BY a.tanggal DESC
+        ", $id_siswa, $bulan, $tahun);
+        
+        return $wpdb->get_results($query, ARRAY_A);
+    }
 
 /**
  * Get statistik presensi siswa
@@ -586,7 +526,6 @@ public static function get_rekap_presensi_kelas($id_kelas, $id_guru, $bulan = nu
     return $wpdb->get_results($query, ARRAY_A);
 }
 
-// Tambahkan di model.php
 
 public static function get_nama_kelas($id_kelas){
     global $wpdb;
@@ -598,134 +537,78 @@ public static function get_nama_kelas($id_kelas){
     return $data;
 }
 
-public static function get_id_kelas_by_name($nama_kelas) {
-    global $wpdb;
+    // model dipakai
+    public static function get_id_kelas_by_name($nama_kelas) {
+        global $wpdb;
 
-    // $table = $wpdb->prefix . 'kelas'; // bubs_kelas
+        // $table = $wpdb->prefix . 'kelas'; // bubs_kelas
 
-    // Query ambil 1 nilai (id)
-    $query = $wpdb->prepare(
-        "SELECT id FROM bubs_kelas WHERE nama_kelas = %s LIMIT 1",
-        $nama_kelas
-    );
+        // Query ambil 1 nilai (id)
+        $query = $wpdb->prepare(
+            "SELECT id FROM bubs_kelas WHERE nama_kelas = %s LIMIT 1",
+            $nama_kelas
+        );
 
-    return $wpdb->get_var($query);
-}
-/**
- * Get rekap presensi kelas untuk guru dengan detail
- */
-// public static function get_rekap_presensi_kelas_detailed($id_kelas, $id_guru, $bulan = null, $tahun = null, $mapel = null) {
-//     global $wpdb;
-
-//     if (!$bulan) $bulan = date('m');
-//     if (!$tahun) $tahun = date('Y');
-
-//     // Validasi bahwa guru memang mengajar kelas ini
-//     $validasi = $wpdb->get_var($wpdb->prepare("
-//         SELECT COUNT(*) FROM bubs_jadwal 
-//         WHERE id_kelas = %d AND id_guru = %d
-//         AND (%s IS NULL OR mata_pelajaran = %s)
-//     ", $id_kelas, $id_guru, $mapel, $mapel));
-
-//     if (!$validasi) {
-//         return new WP_Error('unauthorized', 'Anda tidak mengajar kelas ini atau mata pelajaran tidak ditemukan.');
-//     }
-    
-//     $mapel_condition = $mapel ? "AND j.mata_pelajaran = '" . esc_sql($mapel) . "'" : "";
-    
-//     $query = $wpdb->prepare("
-//         SELECT 
-//             s.id as id_siswa,
-//             s.nama_lengkap,
-//             s.nik,
-//             COUNT(CASE WHEN a.status = 'Hadir' THEN 1 END) as hadir,
-//             COUNT(CASE WHEN a.status = 'Izin' THEN 1 END) as izin,
-//             COUNT(CASE WHEN a.status = 'Sakit' THEN 1 END) as sakit,
-//             COUNT(CASE WHEN a.status = 'Alpa' THEN 1 END) as alpa,
-//             COUNT(*) as total_pertemuan,
-//             j.mata_pelajaran,
-//             k.nama_kelas
-//         FROM bubs_siswa s
-//         LEFT JOIN bubs_absensi_sekolah a ON s.id = a.id_siswa 
-//             AND MONTH(a.tanggal) = %d 
-//             AND YEAR(a.tanggal) = %d
-//         LEFT JOIN bubs_jadwal j ON a.id_jadwal = j.id 
-//             AND j.id_guru = %d
-//             {$mapel_condition}
-//         LEFT JOIN bubs_kelas k ON s.id_kelas = k.id
-//         WHERE s.id_kelas = %d
-//         GROUP BY s.id, s.nama_lengkap, s.nik, j.mata_pelajaran, k.nama_kelas
-//         ORDER BY s.nama_lengkap
-//     ", $bulan, $tahun, $id_guru, $id_kelas);
-
-//     $result = $query;
-    
-//     $results = $wpdb->get_results($query, ARRAY_A);
-    
-//     // Calculate percentages
-//     foreach ($results as &$row) {
-//         $total = $row['total_pertemuan'] ?: 1; // Avoid division by zero
-//         $row['presentase'] = round(($row['hadir'] / $total) * 100, 1);
-//     }
-    
-//     return $results;
-// }
-public static function get_rekap_presensi_kelas_detailed($id_kelas, $id_guru, $bulan, $tahun, $mapel) {
-    global $wpdb;
-
-    if (!$bulan) $bulan = date('m');
-    if (!$tahun) $tahun = date('Y');
-
-    // Validasi bahwa guru memang mengajar kelas ini
-    $validasi_query = $wpdb->prepare("
-        SELECT COUNT(*) 
-        FROM bubs_jadwal 
-        WHERE id_kelas = %d AND id_guru = %d
-        AND (%s IS NULL OR mata_pelajaran = %s)
-    ", $id_kelas, $id_guru, $mapel, $mapel);
-
-    $validasi = $wpdb->get_var($validasi_query);
-
-    if (!$validasi) {
-        return new WP_Error('unauthorized', 'Anda tidak mengajar kelas ini atau mata pelajaran tidak ditemukan.');
+        return $wpdb->get_var($query);
     }
-
-    // QUERY YANG DIPERBAIKI:
-    $query = $wpdb->prepare("
-        SELECT 
-            s.id as id_siswa,
-            s.nama_lengkap,
-            s.nik,
-            COUNT(CASE WHEN a.status = 'Hadir' THEN 1 END) as hadir,
-            COUNT(CASE WHEN a.status = 'Izin' THEN 1 END) as izin,
-            COUNT(CASE WHEN a.status = 'Sakit' THEN 1 END) as sakit,
-            COUNT(CASE WHEN a.status = 'Alpa' THEN 1 END) as alpa,
-            COUNT(*) as total_pertemuan,
-            j.mata_pelajaran,  -- HAPUS GROUP_CONCAT, PAKAI LANGSUNG
-            k.nama_kelas
-        FROM bubs_siswa s
-        LEFT JOIN bubs_absensi_sekolah a ON s.id = a.id_siswa 
-            AND MONTH(a.tanggal) = %d 
-            AND YEAR(a.tanggal) = %d
-        LEFT JOIN bubs_jadwal j ON a.id_jadwal = j.id  -- JOIN TANPA FILTER MAPEL DI SINI
-        LEFT JOIN bubs_kelas as k ON s.id_kelas = k.id
-        WHERE s.id_kelas = %d
-            AND j.id_guru = %d           -- FILTER GURU DI WHERE
-            AND j.mata_pelajaran = %s    -- FILTER MAPEL DI WHERE (PENTING!)
-        GROUP BY s.id, s.nama_lengkap, s.nik, j.mata_pelajaran, k.nama_kelas
-        ORDER BY s.nama_lengkap
-    ", $bulan, $tahun, $id_kelas, $id_guru, $mapel);
-
-    $results = $wpdb->get_results($query, ARRAY_A);
     
-    // Calculate percentages
-    foreach ($results as &$row) {
-        $total = $row['total_pertemuan'] ?: 1;
-        $row['presentase'] = round(($row['hadir'] / $total) * 100, 1);
-    }
+    // model dipakai
+    public static function get_rekap_presensi_kelas_detailed($id_kelas, $id_guru, $bulan, $tahun, $mapel) {
+        global $wpdb;
 
-    return $results;
-}
+        if (!$bulan) $bulan = date('m');
+        if (!$tahun) $tahun = date('Y');
+
+        // Validasi bahwa guru memang mengajar kelas ini
+        $validasi_query = $wpdb->prepare("
+            SELECT COUNT(*) 
+            FROM bubs_jadwal 
+            WHERE id_kelas = %d AND id_guru = %d
+            AND (%s IS NULL OR mata_pelajaran = %s)
+        ", $id_kelas, $id_guru, $mapel, $mapel);
+
+        $validasi = $wpdb->get_var($validasi_query);
+
+        if (!$validasi) {
+            return new WP_Error('unauthorized', 'Anda tidak mengajar kelas ini atau mata pelajaran tidak ditemukan.');
+        }
+
+        // QUERY YANG DIPERBAIKI:
+        $query = $wpdb->prepare("
+            SELECT 
+                s.id as id_siswa,
+                s.nama_lengkap,
+                s.nik,
+                COUNT(CASE WHEN a.status = 'Hadir' THEN 1 END) as hadir,
+                COUNT(CASE WHEN a.status = 'Izin' THEN 1 END) as izin,
+                COUNT(CASE WHEN a.status = 'Sakit' THEN 1 END) as sakit,
+                COUNT(CASE WHEN a.status = 'Alpa' THEN 1 END) as alpa,
+                COUNT(*) as total_pertemuan,
+                j.mata_pelajaran,  -- HAPUS GROUP_CONCAT, PAKAI LANGSUNG
+                k.nama_kelas
+            FROM bubs_siswa s
+            LEFT JOIN bubs_absensi_sekolah a ON s.id = a.id_siswa 
+                AND MONTH(a.tanggal) = %d 
+                AND YEAR(a.tanggal) = %d
+            LEFT JOIN bubs_jadwal j ON a.id_jadwal = j.id  -- JOIN TANPA FILTER MAPEL DI SINI
+            LEFT JOIN bubs_kelas as k ON s.id_kelas = k.id
+            WHERE s.id_kelas = %d
+                AND j.id_guru = %d           -- FILTER GURU DI WHERE
+                AND j.mata_pelajaran = %s    -- FILTER MAPEL DI WHERE (PENTING!)
+            GROUP BY s.id, s.nama_lengkap, s.nik, j.mata_pelajaran, k.nama_kelas
+            ORDER BY s.nama_lengkap
+        ", $bulan, $tahun, $id_kelas, $id_guru, $mapel);
+
+        $results = $wpdb->get_results($query, ARRAY_A);
+        
+        // Calculate percentages
+        foreach ($results as &$row) {
+            $total = $row['total_pertemuan'] ?: 1;
+            $row['presentase'] = round(($row['hadir'] / $total) * 100, 1);
+        }
+
+        return $results;
+    }
 
 
 /**
@@ -744,27 +627,7 @@ public static function get_mata_pelajaran_guru($id_guru, $id_kelas) {
     return $wpdb->get_results($query, ARRAY_A);
 }
 
-/**
- * Get kelas yang diajar oleh guru
- */
-// public static function get_kelas_guru($id_guru) {
-//     global $wpdb;
-    
-//     $query = $wpdb->prepare("
-//         SELECT DISTINCT 
-//             k.id,
-//             k.nama_kelas
-//         FROM bubs_jadwal j
-//         INNER JOIN bubs_kelas k ON j.id_kelas = k.id
-//         WHERE j.id_guru = %d
-//         ORDER BY k.nama_kelas
-//     ", $id_guru);
-    
-//     return $wpdb->get_results($query, ARRAY_A);
-// }
-
-
-    // Model function untuk mengambil jadwal by guru ID
+    // model dipakai
     public static function bubs_get_jadwal_by_guru_id($guru_id) {
         global $wpdb;
         
@@ -787,6 +650,4 @@ public static function get_mata_pelajaran_guru($id_guru, $id_kelas) {
         
         return $results;
     }
-
-
 }
