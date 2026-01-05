@@ -170,4 +170,3 @@ function bubs_create_all_tables() {
     }
 }
 
-register_activation_hook(__FILE__, 'bubs_create_all_tables');

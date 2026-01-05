@@ -11,11 +11,14 @@ License: GPL2
 defined('ABSPATH') || exit;
 
 require_once plugin_dir_path(__FILE__) . 'install-tables.php';
+register_activation_hook(__FILE__, 'bubs_create_all_tables');
+
 require_once plugin_dir_path(__FILE__) . 'model.php';
 require_once plugin_dir_path(__FILE__) . 'controller.php';
 require_once plugin_dir_path(__FILE__) . 'tugas-endpoints.php';
 require_once plugin_dir_path(__FILE__) . 'materi-endpoints.php';
 require_once plugin_dir_path(__FILE__) . 'submission-endpoints.php';
+require_once plugin_dir_path(__FILE__) . 'qr-code.php';
 
 
 add_action('rest_api_init', function () {
@@ -305,6 +308,15 @@ add_action('rest_api_init', function () {
     register_rest_route('absensi-bubs/v1', '/nilai/beri', array(
         'methods' => 'POST',
         'callback' => 'bubs_beri_nilai',
+        'permission_callback' => '__return_true',
+    ));
+
+    /**
+     * ? API untuk download qr code
+     * */
+    register_rest_route('absensi-bubs/v1', 'download-qr', array(
+        'methods' => 'GET',
+        'callback' => 'bubs_download_qr',
         'permission_callback' => '__return_true',
     ));
 
