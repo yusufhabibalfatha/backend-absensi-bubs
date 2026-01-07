@@ -87,6 +87,7 @@ class Absensi_Model {
     // model dipakai
     public static function insert_absensi_sekolah($data) {
         global $wpdb;
+
         $prefix = 'bubs_';
 
         if (!is_array($data)) {
@@ -134,6 +135,7 @@ class Absensi_Model {
     // model dipakai
     public static function get_jenis_kegiatan() {
         global $wpdb;
+        
         $table = 'bubs_jenis_kegiatan';
 
         $query = "SELECT * FROM {$table} ORDER BY kategori, nama_kegiatan";
@@ -143,6 +145,7 @@ class Absensi_Model {
     // model dipakai
     public static function get_kelas_boarding() {
         global $wpdb;
+
         $kelas_table = 'bubs_kelas';
         $siswa_table = 'bubs_siswa';
 
@@ -166,6 +169,7 @@ class Absensi_Model {
     // model dipakai
     public static function get_kamar() {
         global $wpdb;
+
         $table = 'bubs_kamar';
 
         $query = "SELECT * FROM {$table} ORDER BY nama_kamar";
@@ -175,6 +179,7 @@ class Absensi_Model {
     // model dipakai
     public static function get_siswa_kegiatan_sekolah($id_kelas, $id_kegiatan) {
         global $wpdb;
+
         $siswa_table = 'bubs_siswa';
         $kelas_table = 'bubs_kelas';
         $kegiatan_table = 'bubs_jenis_kegiatan';
@@ -222,6 +227,7 @@ class Absensi_Model {
     // model dipakai
     public static function get_siswa_kegiatan_pondok($id_kamar, $id_kegiatan) {
         global $wpdb;
+
         $siswa_table = 'bubs_siswa';
         $kamar_table = 'bubs_kamar';
         $kegiatan_table = 'bubs_jenis_kegiatan';
@@ -270,6 +276,7 @@ class Absensi_Model {
     // model dipakai
     public static function insert_absensi_kegiatan($data) {
         global $wpdb;
+
         $prefix = 'bubs_';
 
         if (!is_array($data)) {
@@ -325,6 +332,7 @@ class Absensi_Model {
     // model dipakai
     public static function verify_login($username, $password) {
         global $wpdb;
+
         $users_table = 'bubs_users';
 
         // Cari user by username
@@ -395,6 +403,8 @@ class Absensi_Model {
     // model dipakai
     private static function get_presensi_sekolah_siswa($id_siswa, $bulan, $tahun) {
         global $wpdb;
+
+        $table = 'bubs_absensi_sekolah';
         
         $query = $wpdb->prepare("
             SELECT 
@@ -405,7 +415,7 @@ class Absensi_Model {
                 j.hari,
                 k.nama_kelas,
                 g.nama as nama_guru
-            FROM bubs_absensi_sekolah a
+            FROM {$table} a
             INNER JOIN bubs_jadwal j ON a.id_jadwal = j.id
             INNER JOIN bubs_kelas k ON j.id_kelas = k.id
             INNER JOIN bubs_guru g ON j.id_guru = g.id

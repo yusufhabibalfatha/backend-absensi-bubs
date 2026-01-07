@@ -22,7 +22,7 @@ function bubs_download_qr(){
   }
   
   global $wpdb;
-  $siswa_table = 'wp_bubs_siswa';
+  $siswa_table = 'bubs_siswa';
 
 //   $siswa = $wpdb->get_results("SELECT nik, nama_lengkap FROM $siswa_table WHERE kelas_id = $kelas_id");
   $siswa = $wpdb->get_results("SELECT nik, nama_lengkap FROM $siswa_table");

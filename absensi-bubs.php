@@ -1,6 +1,6 @@
 <?php
 /*
-Plugin Name: Absensi Bubs V2
+Plugin Name: Absensi Bubs V3
 Plugin URI: https://yusufhabib.site
 Description: Plugin untuk sistem absensi sekolah Bubs.
 Version: 1.1
@@ -323,13 +323,20 @@ add_action('rest_api_init', function () {
 });
 
 
-add_action('init', function() {
-    header("Access-Control-Allow-Origin: https://bubs.sdit.web.id");
-    header("Access-Control-Allow-Methods: GET, POST, OPTIONS, PUT, DELETE");
-    header("Access-Control-Allow-Headers: Authorization, Content-Type, X-User-Data");
+// add_action('init', function() {
+//     header("Access-Control-Allow-Origin: https://bubs.sdit.web.id");
+//     header("Access-Control-Allow-Methods: GET, POST, OPTIONS, PUT, DELETE");
+//     header("Access-Control-Allow-Headers: Authorization, Content-Type, X-User-Data");
 
-    if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
-        header("HTTP/1.1 200 OK");
-        exit;
-    }
-});
+//     if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
+//         header("HTTP/1.1 200 OK");
+//         exit;
+//     }
+// });
+
+add_filter('rest_pre_serve_request', function ($served, $result, $request, $server) {
+    header('Access-Control-Allow-Origin: *');
+    header('Access-Control-Allow-Methods: GET, POST, OPTIONS, PUT, DELETE');
+    header('Access-Control-Allow-Headers: Authorization, Content-Type, X-User-Data');
+    return $served;
+}, 10, 4);
